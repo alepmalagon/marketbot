@@ -12,12 +12,19 @@ A tool for finding good market deals on T1 battleship hulls near Sosala in EVE O
   - Price comparison with Jita (must be equal or lower)
 - Sorts deals by savings percentage
 - Outputs results to console and JSON file
+- Can run as a background service with scheduled checks
+- Sends desktop notifications for good deals
 
 ## Requirements
 
 - Python 3.8+
-- `requests` library
-- `python-dotenv` library
+- Required libraries (see requirements.txt):
+  - `requests`
+  - `python-dotenv`
+  - `schedule` (for background service)
+  - `plyer` (for notifications)
+  - `psutil` (for service management)
+  - `pywin32` (for Windows service, Windows only)
 
 ## Installation
 
@@ -39,10 +46,50 @@ A tool for finding good market deals on T1 battleship hulls near Sosala in EVE O
 
 ## Usage
 
-Run the main script:
+### Single Scan Mode
+
+Run a single scan and exit:
 ```
 python main.py
 ```
+or
+```
+python main.py --mode scan
+```
+
+### Background Service Mode
+
+Run as a continuous service in the foreground:
+```
+python main.py --mode foreground
+```
+
+Run as a daemon process in the background (Linux/macOS only):
+```
+python main.py --mode background
+```
+
+Run as a Windows service (Windows only):
+```
+# Install the service
+python main.py --mode windows-service install
+
+# Start the service
+python main.py --mode windows-service start
+
+# Stop the service
+python main.py --mode windows-service stop
+
+# Remove the service
+python main.py --mode windows-service remove
+```
+
+### Command Line Options
+
+- `--mode`: Operating mode (scan, foreground, background, windows-service)
+- `--interval`: Override the check interval in hours (e.g., `--interval 2` for checking every 2 hours)
+
+## How It Works
 
 The script will:
 1. Fetch all sell orders for T1 battleship hulls in multiple regions around Sosala (The Bleak Lands, Domain, Heimatar, Devoid, and Lonetrek)
@@ -50,13 +97,23 @@ The script will:
 3. Compare prices with the lowest Jita prices
 4. Output good deals to the console
 5. Save the deals to a JSON file
+6. Send desktop notifications for deals with significant savings
 
 ## Configuration
 
 You can configure the bot by editing the `config.py` file or by setting environment variables in a `.env` file:
 
-- `MIN_PRICE`: Minimum price to consider (default: 100,000,000 ISK)
+### Market Settings
+- `MIN_PRICE`: Minimum price to consider (default: 150,000,000 ISK)
 - `MAX_JUMPS`: Maximum number of jumps from Sosala (default: 4)
+
+### Scheduler Settings
+- `CHECK_INTERVAL_HOURS`: How often to check for deals when running as a service (default: 4 hours)
+
+### Notification Settings
+- `ENABLE_NOTIFICATIONS`: Whether to show desktop notifications (default: true)
+- `MIN_SAVINGS_PERCENT_FOR_NOTIFICATION`: Minimum savings percentage to trigger a notification (default: 5.0%)
+- `MAX_NOTIFICATIONS`: Maximum number of notifications to show at once (default: 5)
 
 ## EVE ESI API
 
