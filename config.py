@@ -36,7 +36,7 @@ SEARCH_REGION_IDS = [
 
 # System IDs
 JITA_SYSTEM_ID = 30000142
-SOSALA_SYSTEM_ID = 30002558
+SOSALA_SYSTEM_ID = 30003070
 
 # T1 Battleship type IDs
 # This is a list of all T1 battleship hull type IDs

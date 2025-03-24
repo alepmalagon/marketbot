@@ -124,6 +124,7 @@ class MarketScanner:
             
             if nearby_orders:
                 logger.info(f"Found {len(nearby_orders)} nearby sell orders for {type_name}")
+                logger.info(str(nearby_orders))
                 orders_by_type[type_id].extend(nearby_orders)
             else:
                 logger.info(f"No nearby sell orders found for {type_name}")
