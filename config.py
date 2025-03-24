@@ -7,6 +7,18 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
+# Scheduler settings
+# How often to check for deals (in hours)
+CHECK_INTERVAL_HOURS = int(os.getenv('CHECK_INTERVAL_HOURS', '4'))
+
+# Notification settings
+# Whether to show desktop notifications
+ENABLE_NOTIFICATIONS = os.getenv('ENABLE_NOTIFICATIONS', 'true').lower() == 'true'
+# Minimum savings percentage to trigger a notification
+MIN_SAVINGS_PERCENT_FOR_NOTIFICATION = float(os.getenv('MIN_SAVINGS_PERCENT_FOR_NOTIFICATION', '5.0'))
+# Maximum number of notifications to show at once
+MAX_NOTIFICATIONS = int(os.getenv('MAX_NOTIFICATIONS', '5'))
+
 # EVE ESI API endpoints
 ESI_BASE_URL = "https://esi.evetech.net/latest"
 MARKET_ORDERS_ENDPOINT = f"{ESI_BASE_URL}/markets/{{region_id}}/orders/"
