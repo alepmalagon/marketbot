@@ -30,7 +30,7 @@ def main():
         
         # Print the deals in a table format
         print("\n=== GOOD DEALS ON T1 BATTLESHIP HULLS NEAR SOSALA ===")
-        print(f"{'Type Name':<15} {'System':<10} {'Jumps':<6} {'Price (ISK)':<15} {'Jita Price':<15} {'Savings':<15} {'Savings %':<10}")
+        print(f"{'Type Name':<15} {'System':<10} {'Jumps':<6} {'Price (ISK)':<25} {'Jita Price':<25} {'Savings':<25} {'Savings %':<10}")
         print("-" * 90)
         
         for deal in good_deals:
@@ -38,9 +38,9 @@ def main():
                 f"{deal['type_name']:<15} "
                 f"{deal['system_name']:<10} "
                 f"{deal['distance_to_sosala']:<6} "
-                f"{deal['price']:,.2f} ISK".ljust(15) + " "
-                f"{deal['jita_price']:,.2f} ISK".ljust(15) + " "
-                f"{deal['savings']:,.2f} ISK".ljust(15) + " "
+                f"{deal['price']:,.2f} ISK".ljust(25) + " "
+                f"{deal['jita_price']:,.2f} ISK".ljust(25) + " "
+                f"{deal['savings']:,.2f} ISK".ljust(25) + " "
                 f"{deal['savings_percent']:.2f}%".ljust(10)
             )
         
