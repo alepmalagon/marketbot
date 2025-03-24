@@ -43,27 +43,27 @@ SOSALA_SYSTEM_ID = 30003070
 T1_BATTLESHIP_TYPE_IDS = [
     # Amarr
     24692,  # Abaddon
-    643,    # Apocalypse
-    642,    # Armageddon
+    642,    # Apocalypse
+    643,    # Armageddon
     
     # Caldari
-    24688,  # Raven
-    638,    # Rokh
-    24690,  # Scorpion
+    638,  # Raven
+    24688,    # Rokh
+    640,  # Scorpion
     
     # Gallente
-    641,    # Dominix
-    24694,  # Hyperion
-    645,    # Megathron
+    645,    # Dominix
+    24690,  # Hyperion
+    641,    # Megathron
     
     # Minmatar
-    24696,  # Maelstrom
-    4302,   # Tempest
-    639,    # Typhoon
+    24694,  # Maelstrom
+    639,   # Tempest
+    644,    # Typhoon
 ]
 
 # Maximum number of jumps from Sosala to consider
 MAX_JUMPS = 4
 
 # Minimum price to consider (to filter out low-value orders)
-MIN_PRICE = 100000000  # 100 million ISK
+MIN_PRICE = 150000000  # 150 million ISK
