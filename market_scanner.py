@@ -77,12 +77,12 @@ class MarketScanner:
     
     def fetch_battleship_orders(self) -> Dict[int, List[Dict]]:
         """
-        Fetch all sell orders for T1 battleship hulls in the Lonetrek region.
+        Fetch all sell orders for T1 battleship hulls in the regions around Sosala.
         
         Returns:
             A dictionary mapping type IDs to lists of sell orders
         """
-        logger.info("Fetching T1 battleship sell orders from Lonetrek region...")
+        logger.info("Fetching T1 battleship sell orders from regions around Sosala...")
         
         # Dictionary to store orders by type ID
         orders_by_type = defaultdict(list)
@@ -92,16 +92,20 @@ class MarketScanner:
             type_name = self.get_type_name(type_id)
             logger.info(f"Fetching orders for {type_name} (Type ID: {type_id})")
             
-            # Get sell orders for this type in Lonetrek
-            orders = self.esi_client.get_market_orders(
-                region_id=config.LONETREK_REGION_ID,
-                type_id=type_id,
-                order_type='sell'
-            )
+            # Get sell orders for this type in all search regions
+            all_orders = []
+            for region_id in config.SEARCH_REGION_IDS:
+                logger.info(f"Searching region ID: {region_id}")
+                orders = self.esi_client.get_market_orders(
+                    region_id=region_id,
+                    type_id=type_id,
+                    order_type='sell'
+                )
+                all_orders.extend(orders)
             
             # Filter orders by minimum price
             filtered_orders = [
-                order for order in orders
+                order for order in all_orders
                 if order.get('price', 0) >= config.MIN_PRICE
             ]
             
