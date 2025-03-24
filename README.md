@@ -45,7 +45,7 @@ python main.py
 ```
 
 The script will:
-1. Fetch all sell orders for T1 battleship hulls in the Lonetrek region
+1. Fetch all sell orders for T1 battleship hulls in multiple regions around Sosala (The Bleak Lands, Domain, Heimatar, Devoid, and Lonetrek)
 2. Filter orders by minimum price and maximum distance from Sosala
 3. Compare prices with the lowest Jita prices
 4. Output good deals to the console

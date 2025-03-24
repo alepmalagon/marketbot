@@ -18,8 +18,21 @@ ROUTE_ENDPOINT = f"{ESI_BASE_URL}/route/{{origin}}/{{destination}}/"
 # Region IDs
 # The Forge (contains Jita)
 FORGE_REGION_ID = 10000002
-# Lonetrek (contains Sosala)
+# Regions around Sosala
 LONETREK_REGION_ID = 10000016
+BLEAK_LANDS_REGION_ID = 10000038  # The Bleak Lands
+DOMAIN_REGION_ID = 10000043       # Domain
+HEIMATAR_REGION_ID = 10000030     # Heimatar
+DEVOID_REGION_ID = 10000036       # Devoid
+
+# List of regions to search for orders
+SEARCH_REGION_IDS = [
+    LONETREK_REGION_ID,
+    BLEAK_LANDS_REGION_ID,
+    DOMAIN_REGION_ID,
+    HEIMATAR_REGION_ID,
+    DEVOID_REGION_ID
+]
 
 # System IDs
 JITA_SYSTEM_ID = 30000142
