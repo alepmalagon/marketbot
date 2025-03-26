@@ -1,6 +1,6 @@
 # EVE Online Market Bot
 
-A tool for finding good market deals on T1 battleship hulls near Sosala in EVE Online.
+A tool for finding good market deals on T1 battleship hulls near any system in EVE Online.
 
 ## Features
 
@@ -8,12 +8,13 @@ A tool for finding good market deals on T1 battleship hulls near Sosala in EVE O
 - Compares prices with Jita (the main trade hub)
 - Filters orders by:
   - Minimum price threshold
-  - Maximum distance from Sosala (in jumps)
+  - Maximum distance from your reference system (in jumps)
   - Price comparison with Jita (must be equal or lower)
 - Sorts deals by savings percentage
 - Outputs results to console and JSON file
 - Can run as a background service with scheduled checks
 - Sends desktop notifications for good deals
+- Supports any system as a reference point (not just Sosala)
 
 ## Requirements
 
@@ -48,7 +49,7 @@ A tool for finding good market deals on T1 battleship hulls near Sosala in EVE O
 
 ### Single Scan Mode
 
-Run a single scan and exit:
+Run a single scan and exit (defaults to Sosala as reference system):
 ```
 python main.py
 ```
@@ -57,11 +58,21 @@ or
 python main.py --mode scan
 ```
 
+Run a scan with a custom reference system:
+```
+python main.py --system 30000142  # Use Jita as reference system
+```
+
 ### Background Service Mode
 
 Run as a continuous service in the foreground:
 ```
 python main.py --mode foreground
+```
+
+Run as a continuous service with a custom reference system:
+```
+python main.py --mode foreground --system 30000142  # Use Jita as reference system
 ```
 
 Run as a daemon process in the background (Linux/macOS only):
@@ -88,13 +99,14 @@ python main.py --mode windows-service remove
 
 - `--mode`: Operating mode (scan, foreground, background, windows-service)
 - `--interval`: Override the check interval in hours (e.g., `--interval 2` for checking every 2 hours)
+- `--system`: System ID to use as reference (defaults to Sosala if not provided)
 
 ## How It Works
 
 The script will:
-1. Automatically discover all regions within the configured jump range of Sosala using a BFS algorithm
+1. Automatically discover all regions within the configured jump range of your reference system using a BFS algorithm
 2. Fetch all sell orders for T1 battleship hulls in the discovered regions
-3. Filter orders by minimum price and maximum distance from Sosala
+3. Filter orders by minimum price and maximum distance from your reference system
 4. Compare prices with the lowest Jita prices
 5. Output good deals to the console
 6. Save the deals to a JSON file
@@ -106,7 +118,9 @@ You can configure the bot by editing the `config.py` file or by setting environm
 
 ### Market Settings
 - `MIN_PRICE`: Minimum price to consider (default: 150,000,000 ISK)
-- `MAX_JUMPS`: Maximum number of jumps from Sosala (default: 4)
+- `MAX_JUMPS`: Maximum number of jumps from reference system (default: 8)
+- `REFERENCE_SYSTEM_ID`: Default reference system ID (default: 30003070 - Sosala)
+- `REFERENCE_SYSTEM_NAME`: Default reference system name (default: "Sosala")
 
 ### Solar System Data
 - `SOLAR_SYSTEM_DATA_PATH`: Path to the pickle file containing solar system data (default: 'solar_systems.pickle')

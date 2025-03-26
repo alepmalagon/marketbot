@@ -18,6 +18,7 @@ from datetime import datetime
 from market_scanner import MarketScanner
 from service_manager import ServiceManager, run_as_daemon, run_in_foreground
 import config
+from esi_client import ESIClient
 
 # Set up logging
 logging.basicConfig(
@@ -26,12 +27,28 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-def run_single_scan():
-    """Run a single market scan and output the results."""
-    logger.info("Starting EVE Online Market Bot (single scan mode)...")
+def run_single_scan(reference_system_id=None):
+    """
+    Run a single market scan and output the results.
     
-    # Create a market scanner
-    scanner = MarketScanner()
+    Args:
+        reference_system_id: Optional system ID to use as reference
+    """
+    # If a reference system ID is provided, update the config
+    if reference_system_id:
+        config.REFERENCE_SYSTEM_ID = reference_system_id
+        # Get the system name from the ESI API
+        esi_client = ESIClient()
+        system_info = esi_client.get_system_info(reference_system_id)
+        config.REFERENCE_SYSTEM_NAME = system_info.get('name', f'System {reference_system_id}')
+    
+    logger.info(f"Starting EVE Online Market Bot (single scan mode) for {config.REFERENCE_SYSTEM_NAME}...")
+    
+    # Create a market scanner with the reference system
+    scanner = MarketScanner(
+        reference_system_id=config.REFERENCE_SYSTEM_ID,
+        reference_system_name=config.REFERENCE_SYSTEM_NAME
+    )
     
     # Find good deals
     good_deals = scanner.find_good_deals()
@@ -41,7 +58,7 @@ def run_single_scan():
         logger.info(f"Found {len(good_deals)} good deals!")
         
         # Print the deals in a table format
-        print("\n=== GOOD DEALS ON T1 BATTLESHIP HULLS NEAR SOSALA ===")
+        print(f"\n=== GOOD DEALS ON T1 BATTLESHIP HULLS NEAR {config.REFERENCE_SYSTEM_NAME.upper()} ===")
         print(f"{'Type Name':<15} {'System':<10} {'Jumps':<6} {'Price (ISK)':<20} {'Jita Price':<20} {'Savings':<20} {'Savings %':<10}")
         print("-" * 115)
 
@@ -49,7 +66,7 @@ def run_single_scan():
             print(
                 f"{deal['type_name']:<15} "
                 f"{deal['system_name']:<10} "
-                f"{deal['distance_to_sosala']:<6} "
+                f"{deal['distance_to_reference']:<6} "
                 f"{deal['price']:<19,.2f} "
                 f"{deal['jita_price']:<19,.2f} "
                 f"{deal['savings']:<19,.2f} "
@@ -58,7 +75,7 @@ def run_single_scan():
 
         # Save the deals to a JSON file
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"deals_{timestamp}.json"
+        filename = f"deals_{config.REFERENCE_SYSTEM_NAME.lower()}_{timestamp}.json"
         
         with open(filename, 'w') as f:
             json.dump(good_deals, f, indent=2)
@@ -105,6 +122,12 @@ def main():
         help="Override the check interval (in hours) from config"
     )
     
+    parser.add_argument(
+        "--system",
+        type=int,
+        help="System ID to use as reference (defaults to Sosala if not provided)"
+    )
+    
     # Parse arguments
     args = parser.parse_args()
     
@@ -115,10 +138,10 @@ def main():
     
     # Run in the appropriate mode
     if args.mode == "scan":
-        run_single_scan()
+        run_single_scan(args.system)
     elif args.mode == "foreground":
         logger.info("Starting in foreground service mode...")
-        run_in_foreground()
+        run_in_foreground(args.system)
     elif args.mode == "background":
         if platform.system() == "Windows":
             logger.error("Background daemon mode is not supported on Windows.")
@@ -126,7 +149,7 @@ def main():
             return
         
         logger.info("Starting in background service mode...")
-        run_as_daemon()
+        run_as_daemon(args.system)
     elif args.mode == "windows-service":
         install_windows_service()
 
