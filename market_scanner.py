@@ -6,6 +6,7 @@ from typing import Dict, List, Tuple
 from collections import defaultdict
 
 from esi_client import ESIClient
+from solar_system_data import get_regions_to_search
 import config
 
 # Set up logging
@@ -87,6 +88,10 @@ class MarketScanner:
         # Dictionary to store orders by type ID
         orders_by_type = defaultdict(list)
         
+        # Get the list of regions to search using the solar system data
+        search_region_ids = get_regions_to_search(config.SOLAR_SYSTEM_DATA_PATH)
+        logger.info(f"Discovered {len(search_region_ids)} regions to search: {search_region_ids}")
+        
         # Fetch orders for each battleship type
         for type_id in config.T1_BATTLESHIP_TYPE_IDS:
             type_name = self.get_type_name(type_id)
@@ -94,7 +99,7 @@ class MarketScanner:
             
             # Get sell orders for this type in all search regions
             all_orders = []
-            for region_id in config.SEARCH_REGION_IDS:
+            for region_id in search_region_ids:
                 logger.info(f"Searching region ID: {region_id}")
                 orders = self.esi_client.get_market_orders(
                     region_id=region_id,

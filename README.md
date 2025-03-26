@@ -92,12 +92,13 @@ python main.py --mode windows-service remove
 ## How It Works
 
 The script will:
-1. Fetch all sell orders for T1 battleship hulls in multiple regions around Sosala (The Bleak Lands, Domain, Heimatar, Devoid, and Lonetrek)
-2. Filter orders by minimum price and maximum distance from Sosala
-3. Compare prices with the lowest Jita prices
-4. Output good deals to the console
-5. Save the deals to a JSON file
-6. Send desktop notifications for deals with significant savings
+1. Automatically discover all regions within the configured jump range of Sosala using a BFS algorithm
+2. Fetch all sell orders for T1 battleship hulls in the discovered regions
+3. Filter orders by minimum price and maximum distance from Sosala
+4. Compare prices with the lowest Jita prices
+5. Output good deals to the console
+6. Save the deals to a JSON file
+7. Send desktop notifications for deals with significant savings
 
 ## Configuration
 
@@ -106,6 +107,10 @@ You can configure the bot by editing the `config.py` file or by setting environm
 ### Market Settings
 - `MIN_PRICE`: Minimum price to consider (default: 150,000,000 ISK)
 - `MAX_JUMPS`: Maximum number of jumps from Sosala (default: 4)
+
+### Solar System Data
+- `SOLAR_SYSTEM_DATA_PATH`: Path to the pickle file containing solar system data (default: 'solar_systems.pickle')
+  - This file should contain a dictionary of solar systems with their connections for the region discovery algorithm
 
 ### Scheduler Settings
 - `CHECK_INTERVAL_HOURS`: How often to check for deals when running as a service (default: 4 hours)
