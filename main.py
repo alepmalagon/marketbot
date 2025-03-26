@@ -77,12 +77,36 @@ def resolve_reference_system(system_input):
     # Otherwise, treat it as a system name and look up the ID
     return find_system_id_by_name(system_input)
 
-def run_single_scan(reference_system=None):
+def parse_hull_ids(hull_ids_str):
+    """
+    Parse a comma-separated string of hull IDs into a list of integers.
+    
+    Args:
+        hull_ids_str: A comma-separated string of hull IDs
+        
+    Returns:
+        A list of hull IDs as integers, or None if the input is invalid
+    """
+    if not hull_ids_str:
+        return None
+        
+    try:
+        # Split the string by commas and convert each part to an integer
+        hull_ids = [int(id_str.strip()) for id_str in hull_ids_str.split(',')]
+        logger.info(f"Parsed hull IDs: {hull_ids}")
+        return hull_ids
+    except ValueError:
+        logger.error(f"Invalid hull IDs format: {hull_ids_str}. Expected comma-separated integers.")
+        return None
+
+def run_single_scan(reference_system=None, max_jumps=None, hull_ids=None):
     """
     Run a single market scan and output the results.
     
     Args:
         reference_system: Optional system ID or name to use as reference
+        max_jumps: Optional maximum number of jumps from reference system
+        hull_ids: Optional list of hull type IDs to search for
     """
     # Resolve the reference system (could be ID or name)
     reference_system_id = resolve_reference_system(reference_system)
@@ -99,6 +123,16 @@ def run_single_scan(reference_system=None):
         esi_client = ESIClient()
         system_info = esi_client.get_system_info(reference_system_id)
         config.REFERENCE_SYSTEM_NAME = system_info.get('name', f'System {reference_system_id}')
+    
+    # If max_jumps is provided, update the config
+    if max_jumps is not None:
+        config.MAX_JUMPS = max_jumps
+        logger.info(f"Maximum jumps set to {config.MAX_JUMPS}")
+    
+    # If hull_ids is provided, update the config
+    if hull_ids is not None:
+        config.T1_BATTLESHIP_TYPE_IDS = hull_ids
+        logger.info(f"Using custom hull type IDs: {config.T1_BATTLESHIP_TYPE_IDS}")
     
     logger.info(f"Starting EVE Online Market Bot (single scan mode) for {config.REFERENCE_SYSTEM_NAME}...")
     
@@ -186,6 +220,18 @@ def main():
         help="System ID or name to use as reference (defaults to Sosala if not provided)"
     )
     
+    parser.add_argument(
+        "--jumps",
+        type=int,
+        help="Maximum number of jumps from reference system to consider (defaults to 8)"
+    )
+    
+    parser.add_argument(
+        "--hulls",
+        type=str,
+        help="Comma-separated list of hull type IDs to search for (defaults to all T1 battleships)"
+    )
+    
     # Parse arguments
     args = parser.parse_args()
     
@@ -194,12 +240,17 @@ def main():
         config.CHECK_INTERVAL_HOURS = args.interval
         logger.info(f"Check interval set to {config.CHECK_INTERVAL_HOURS} hours")
     
+    # Parse hull IDs if specified
+    hull_ids = None
+    if args.hulls:
+        hull_ids = parse_hull_ids(args.hulls)
+    
     # Run in the appropriate mode
     if args.mode == "scan":
-        run_single_scan(args.system)
+        run_single_scan(args.system, args.jumps, hull_ids)
     elif args.mode == "foreground":
         logger.info("Starting in foreground service mode...")
-        run_in_foreground(args.system)
+        run_in_foreground(args.system, args.jumps, hull_ids)
     elif args.mode == "background":
         if platform.system() == "Windows":
             logger.error("Background daemon mode is not supported on Windows.")
@@ -207,7 +258,7 @@ def main():
             return
         
         logger.info("Starting in background service mode...")
-        run_as_daemon(args.system)
+        run_as_daemon(args.system, args.jumps, hull_ids)
     elif args.mode == "windows-service":
         install_windows_service()
 

@@ -15,6 +15,7 @@ A tool for finding good market deals on T1 battleship hulls near any system in E
 - Can run as a background service with scheduled checks
 - Sends desktop notifications for good deals
 - Supports any system as a reference point (not just Sosala)
+- Customizable jump range and hull types
 
 ## Requirements
 
@@ -58,9 +59,25 @@ or
 python main.py --mode scan
 ```
 
-Run a scan with a custom reference system:
+Run a scan with a custom reference system (by ID or name):
 ```
-python main.py --system 30000142  # Use Jita as reference system
+python main.py --system 30000142  # Use Jita as reference system (by ID)
+python main.py --system "Jita"    # Use Jita as reference system (by name)
+```
+
+Run a scan with a custom jump range:
+```
+python main.py --jumps 4  # Only look for deals within 4 jumps
+```
+
+Run a scan for specific hull types:
+```
+python main.py --hulls 642,643,638  # Only look for Apocalypse, Armageddon, and Raven
+```
+
+Combine multiple options:
+```
+python main.py --system "Amarr" --jumps 5 --hulls 642,643
 ```
 
 ### Background Service Mode
@@ -70,9 +87,9 @@ Run as a continuous service in the foreground:
 python main.py --mode foreground
 ```
 
-Run as a continuous service with a custom reference system:
+Run as a continuous service with custom options:
 ```
-python main.py --mode foreground --system 30000142  # Use Jita as reference system
+python main.py --mode foreground --system "Jita" --jumps 3 --interval 2
 ```
 
 Run as a daemon process in the background (Linux/macOS only):
@@ -99,7 +116,9 @@ python main.py --mode windows-service remove
 
 - `--mode`: Operating mode (scan, foreground, background, windows-service)
 - `--interval`: Override the check interval in hours (e.g., `--interval 2` for checking every 2 hours)
-- `--system`: System ID to use as reference (defaults to Sosala if not provided)
+- `--system`: System ID or name to use as reference (defaults to Sosala if not provided)
+- `--jumps`: Maximum number of jumps from reference system to consider (defaults to 8)
+- `--hulls`: Comma-separated list of hull type IDs to search for (defaults to all T1 battleships)
 
 ## How It Works
 
@@ -133,6 +152,30 @@ You can configure the bot by editing the `config.py` file or by setting environm
 - `ENABLE_NOTIFICATIONS`: Whether to show desktop notifications (default: true)
 - `MIN_SAVINGS_PERCENT_FOR_NOTIFICATION`: Minimum savings percentage to trigger a notification (default: 5.0%)
 - `MAX_NOTIFICATIONS`: Maximum number of notifications to show at once (default: 5)
+
+## Hull Type IDs
+
+The default configuration includes all T1 battleship hulls. If you want to specify custom hull types with the `--hulls` parameter, here are the type IDs for reference:
+
+### Amarr
+- 24692: Abaddon
+- 642: Apocalypse
+- 643: Armageddon
+
+### Caldari
+- 638: Raven
+- 24688: Rokh
+- 640: Scorpion
+
+### Gallente
+- 645: Dominix
+- 24690: Hyperion
+- 641: Megathron
+
+### Minmatar
+- 24694: Maelstrom
+- 639: Tempest
+- 644: Typhoon
 
 ## EVE ESI API
 
