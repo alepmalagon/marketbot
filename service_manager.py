@@ -80,12 +80,14 @@ def find_system_id_by_name(system_name: str) -> int:
 class ServiceManager:
     """Manager for running the market bot as a background service."""
     
-    def __init__(self, reference_system=None):
+    def __init__(self, reference_system=None, max_jumps=None, hull_ids=None):
         """
         Initialize the service manager.
         
         Args:
             reference_system: Optional system ID or name to use as reference
+            max_jumps: Optional maximum number of jumps from reference system
+            hull_ids: Optional list of hull type IDs to search for
         """
         # Resolve the reference system (could be ID or name)
         reference_system_id = resolve_reference_system(reference_system)
@@ -101,6 +103,16 @@ class ServiceManager:
             esi_client = ESIClient()
             system_info = esi_client.get_system_info(reference_system_id)
             config.REFERENCE_SYSTEM_NAME = system_info.get('name', f'System {reference_system_id}')
+        
+        # If max_jumps is provided, update the config
+        if max_jumps is not None:
+            config.MAX_JUMPS = max_jumps
+            logger.info(f"Maximum jumps set to {config.MAX_JUMPS}")
+        
+        # If hull_ids is provided, update the config
+        if hull_ids is not None:
+            config.T1_BATTLESHIP_TYPE_IDS = hull_ids
+            logger.info(f"Using custom hull type IDs: {config.T1_BATTLESHIP_TYPE_IDS}")
         
         self.scanner = MarketScanner(
             reference_system_id=config.REFERENCE_SYSTEM_ID,
@@ -192,12 +204,14 @@ class ServiceManager:
         sys.exit(0)
 
 
-def run_as_daemon(reference_system=None):
+def run_as_daemon(reference_system=None, max_jumps=None, hull_ids=None):
     """
     Run the service as a daemon process.
     
     Args:
         reference_system: Optional system ID or name to use as reference
+        max_jumps: Optional maximum number of jumps from reference system
+        hull_ids: Optional list of hull type IDs to search for
     """
     try:
         # Create a child process
@@ -240,16 +254,18 @@ def run_as_daemon(reference_system=None):
         f.write(str(os.getpid()))
     
     # Start the service
-    service = ServiceManager(reference_system)
+    service = ServiceManager(reference_system, max_jumps, hull_ids)
     service.start()
 
 
-def run_in_foreground(reference_system=None):
+def run_in_foreground(reference_system=None, max_jumps=None, hull_ids=None):
     """
     Run the service in the foreground.
     
     Args:
         reference_system: Optional system ID or name to use as reference
+        max_jumps: Optional maximum number of jumps from reference system
+        hull_ids: Optional list of hull type IDs to search for
     """
-    service = ServiceManager(reference_system)
+    service = ServiceManager(reference_system, max_jumps, hull_ids)
     service.start()
