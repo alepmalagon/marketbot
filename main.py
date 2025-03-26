@@ -6,6 +6,7 @@ This script can run the bot in different modes:
 2. Foreground service mode: Run as a continuous service in the foreground
 3. Background service mode: Run as a daemon process in the background
 4. Windows service mode: Install and run as a Windows service
+5. Web UI mode: Run a web server with a user interface
 """
 import argparse
 import logging
@@ -20,6 +21,7 @@ from service_manager import ServiceManager, run_as_daemon, run_in_foreground
 import config
 from esi_client import ESIClient
 from solar_system_data import load_solar_systems
+from web_server import run_web_server
 
 # Set up logging
 logging.basicConfig(
@@ -203,9 +205,9 @@ def main():
     # Add command line arguments
     parser.add_argument(
         "--mode", 
-        choices=["scan", "foreground", "background", "windows-service"],
+        choices=["scan", "foreground", "background", "windows-service", "web-ui"],
         default="scan",
-        help="Operating mode: single scan, foreground service, background service, or Windows service"
+        help="Operating mode: single scan, foreground service, background service, Windows service, or Web UI"
     )
     
     parser.add_argument(
@@ -261,6 +263,8 @@ def main():
         run_as_daemon(args.system, args.jumps, hull_ids)
     elif args.mode == "windows-service":
         install_windows_service()
+    elif args.mode == "web-ui":
+        run_web_server()
 
 if __name__ == "__main__":
     main()
