@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EVE Online Market Bot</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-rocket"></i> EVE Online Market Bot</h1>
+            <p>Find the best battleship deals near your staging system</p>
+        </header>
+
+        <div class="search-form">
+            <div class="form-group">
+                <label for="system-input">Reference System:</label>
+                <div class="input-with-icon">
+                    <i class="fas fa-globe"></i>
+                    <input type="text" id="system-input" placeholder="Enter system name or ID (e.g., Sosala)" list="systems-list">
+                    <datalist id="systems-list"></datalist>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="jumps-input">Maximum Jumps:</label>
+                <div class="input-with-icon">
+                    <i class="fas fa-route"></i>
+                    <input type="number" id="jumps-input" min="1" max="20" value="8">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Battleship Hulls:</label>
+                <div class="hulls-container" id="hulls-container">
+                    <div class="loading-spinner" id="hulls-loading">
+                        <i class="fas fa-spinner fa-spin"></i> Loading hulls...
+                    </div>
+                </div>
+            </div>
+
+            <button id="scan-button" class="scan-button">
+                <i class="fas fa-search"></i> Scan for Deals
+            </button>
+        </div>
+
+        <div class="results-container" id="results-container" style="display: none;">
+            <div class="results-header">
+                <h2>Market Deals</h2>
+                <div class="results-info">
+                    <span id="system-info"></span> | <span id="jumps-info"></span>
+                </div>
+            </div>
+
+            <div class="loading-spinner" id="results-loading" style="display: none;">
+                <i class="fas fa-spinner fa-spin"></i> Scanning markets...
+            </div>
+
+            <div id="no-results" style="display: none;">
+                <p>No good deals found. Try adjusting your search parameters.</p>
+            </div>
+
+            <div class="results-table-container">
+                <table id="results-table">
+                    <thead>
+                        <tr>
+                            <th>Ship Type</th>
+                            <th>System</th>
+                            <th>Jumps</th>
+                            <th>Price (ISK)</th>
+                            <th>Jita Price</th>
+                            <th>Savings</th>
+                            <th>Savings %</th>
+                        </tr>
+                    </thead>
+                    <tbody id="results-body">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <footer>
+            <p>EVE Online Market Bot &copy; 2023 | <a href="https://github.com/alepmalagon/marketbot" target="_blank">GitHub</a></p>
+            <p class="disclaimer">EVE Online and the EVE logo are the registered trademarks of CCP hf. All rights are reserved worldwide.</p>
+        </footer>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>
