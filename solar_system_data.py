@@ -3,7 +3,7 @@ Solar system data loader and region discovery functionality.
 """
 import pickle
 import logging
-from typing import Dict, List, Set, TypedDict
+from typing import Dict, List, Set, TypedDict, Optional, Union
 from collections import deque
 
 import config
@@ -60,7 +60,7 @@ def load_solar_systems(filepath: str) -> Dict[int, SolarSystem]:
 
 def discover_regions_within_jumps(
     solar_systems: Dict[int, SolarSystem], 
-    start_system_id: str, 
+    start_system_id: Union[str, int], 
     max_jumps: int
 ) -> Set[str]:
     """
@@ -75,7 +75,14 @@ def discover_regions_within_jumps(
     Returns:
         Set of region IDs within the specified number of jumps
     """
-    start_system_id = int(start_system_id)
+    # Convert start_system_id to int if it's a string
+    if isinstance(start_system_id, str):
+        try:
+            start_system_id = int(start_system_id)
+        except ValueError:
+            logger.error(f"Invalid system ID format: {start_system_id}")
+            return set()
+    
     logger.info(f"Starting region discovery from system ID: {start_system_id}")
     
     if start_system_id not in solar_systems:
@@ -165,6 +172,33 @@ def discover_regions_within_jumps(
     logger.info(f"Final result: Discovered {len(region_ids)} regions within {max_jumps} jumps of {start_system_name}")
     return region_ids
 
+def find_system_id_by_name(solar_systems: Dict[int, SolarSystem], system_name: str) -> Optional[int]:
+    """
+    Find a system ID by its name using the solar system data.
+    
+    Args:
+        solar_systems: Dictionary mapping solar system IDs to solar system data
+        system_name: The name of the system to find
+        
+    Returns:
+        The system ID if found, or None if not found
+    """
+    logger.info(f"Looking up system ID for name: {system_name}")
+    
+    if not solar_systems:
+        logger.warning("No solar system data available, cannot look up system by name")
+        return None
+    
+    # Search for the system by name (case-insensitive)
+    system_name_lower = system_name.lower()
+    for system_id, system_data in solar_systems.items():
+        if system_data['solar_system_name'].lower() == system_name_lower:
+            logger.info(f"Found system ID {system_id} for name {system_name}")
+            return system_id
+    
+    logger.warning(f"No system found with name: {system_name}")
+    return None
+
 def get_regions_to_search(solar_system_data_path: str = None, reference_system_id: int = None) -> List[int]:
     """
     Get the list of region IDs to search based on the configured max jumps from the reference system.
@@ -195,7 +229,7 @@ def get_regions_to_search(solar_system_data_path: str = None, reference_system_i
     logger.info(f"Starting region discovery from reference system ID: {reference_system_id}")
     region_ids = discover_regions_within_jumps(
         solar_systems, 
-        str(reference_system_id), 
+        reference_system_id, 
         config.MAX_JUMPS
     )
     
