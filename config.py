@@ -51,7 +51,9 @@ FALLBACK_REGION_IDS = [
 
 # System IDs
 JITA_SYSTEM_ID = 30000142
-SOSALA_SYSTEM_ID = 30003070
+# Default reference system (Sosala)
+REFERENCE_SYSTEM_ID = int(os.getenv('REFERENCE_SYSTEM_ID', '30003070'))  # Default to Sosala
+REFERENCE_SYSTEM_NAME = os.getenv('REFERENCE_SYSTEM_NAME', 'Sosala')  # Default to Sosala
 
 # T1 Battleship type IDs
 # This is a list of all T1 battleship hull type IDs
@@ -77,7 +79,7 @@ T1_BATTLESHIP_TYPE_IDS = [
     644,    # Typhoon
 ]
 
-# Maximum number of jumps from Sosala to consider
+# Maximum number of jumps from reference system to consider
 MAX_JUMPS = 8
 
 # Minimum price to consider (to filter out low-value orders)

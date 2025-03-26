@@ -19,12 +19,22 @@ logger = logging.getLogger(__name__)
 class MarketScanner:
     """Scanner for finding good deals on T1 battleship hulls."""
     
-    def __init__(self):
-        """Initialize the market scanner."""
+    def __init__(self, reference_system_id=None, reference_system_name=None):
+        """
+        Initialize the market scanner.
+        
+        Args:
+            reference_system_id: Optional system ID to use as reference (defaults to config.REFERENCE_SYSTEM_ID)
+            reference_system_name: Optional system name to use as reference (defaults to config.REFERENCE_SYSTEM_NAME)
+        """
         self.esi_client = ESIClient()
         self.type_names = {}  # Cache for type names
         self.system_names = {}  # Cache for system names
         self.system_distances = {}  # Cache for system distances
+        
+        # Set reference system
+        self.reference_system_id = reference_system_id or config.REFERENCE_SYSTEM_ID
+        self.reference_system_name = reference_system_name or config.REFERENCE_SYSTEM_NAME
     
     def get_type_name(self, type_id: int) -> str:
         """
@@ -56,40 +66,40 @@ class MarketScanner:
             self.system_names[system_id] = system_info.get('name', f'Unknown System {system_id}')
         return self.system_names[system_id]
     
-    def get_distance_to_sosala(self, system_id: int) -> int:
+    def get_distance_to_reference(self, system_id: int) -> int:
         """
-        Get the distance from a system to Sosala.
+        Get the distance from a system to the reference system.
         
         Args:
             system_id: The system ID to get the distance for
             
         Returns:
-            The number of jumps from the system to Sosala
+            The number of jumps from the system to the reference system
         """
-        if system_id == config.SOSALA_SYSTEM_ID:
+        if system_id == self.reference_system_id:
             return 0
         
-        cache_key = (system_id, config.SOSALA_SYSTEM_ID)
+        cache_key = (system_id, self.reference_system_id)
         if cache_key not in self.system_distances:
-            distance = self.esi_client.get_jump_distance(system_id, config.SOSALA_SYSTEM_ID)
+            distance = self.esi_client.get_jump_distance(system_id, self.reference_system_id)
             self.system_distances[cache_key] = distance
         
         return self.system_distances[cache_key]
     
     def fetch_battleship_orders(self) -> Dict[int, List[Dict]]:
         """
-        Fetch all sell orders for T1 battleship hulls in the regions around Sosala.
+        Fetch all sell orders for T1 battleship hulls in the regions around the reference system.
         
         Returns:
             A dictionary mapping type IDs to lists of sell orders
         """
-        logger.info("Fetching T1 battleship sell orders from regions around Sosala...")
+        logger.info(f"Fetching T1 battleship sell orders from regions around {self.reference_system_name}...")
         
         # Dictionary to store orders by type ID
         orders_by_type = defaultdict(list)
         
         # Get the list of regions to search using the solar system data
-        search_region_ids = get_regions_to_search(config.SOLAR_SYSTEM_DATA_PATH)
+        search_region_ids = get_regions_to_search(config.SOLAR_SYSTEM_DATA_PATH, self.reference_system_id)
         logger.info(f"Discovered {len(search_region_ids)} regions to search: {search_region_ids}")
         
         # Fetch orders for each battleship type
@@ -119,17 +129,16 @@ class MarketScanner:
                 system_id = order.get('system_id')
                 if system_id:
                     order['system_name'] = self.get_system_name(system_id)
-                    order['distance_to_sosala'] = self.get_distance_to_sosala(system_id)
+                    order['distance_to_reference'] = self.get_distance_to_reference(system_id)
             
-            # Filter orders by distance to Sosala
+            # Filter orders by distance to reference system
             nearby_orders = [
                 order for order in filtered_orders
-                if order.get('distance_to_sosala', 999) <= config.MAX_JUMPS
+                if order.get('distance_to_reference', 999) <= config.MAX_JUMPS
             ]
             
             if nearby_orders:
                 logger.info(f"Found {len(nearby_orders)} nearby sell orders for {type_name}")
-                logger.info(str(nearby_orders))
                 orders_by_type[type_id].extend(nearby_orders)
             else:
                 logger.info(f"No nearby sell orders found for {type_name}")
@@ -178,17 +187,17 @@ class MarketScanner:
     
     def find_good_deals(self) -> List[Dict]:
         """
-        Find good deals on T1 battleship hulls near Sosala.
+        Find good deals on T1 battleship hulls near the reference system.
         
         A good deal is defined as:
-        1. Within MAX_JUMPS jumps of Sosala
+        1. Within MAX_JUMPS jumps of the reference system
         2. Price is at or below the lowest Jita price
         3. Price is above MIN_PRICE
         
         Returns:
             A list of good deals
         """
-        logger.info("Finding good deals on T1 battleship hulls near Sosala...")
+        logger.info(f"Finding good deals on T1 battleship hulls near {self.reference_system_name}...")
         
         # Fetch all relevant orders
         battleship_orders = self.fetch_battleship_orders()
@@ -205,7 +214,7 @@ class MarketScanner:
             for order in orders:
                 price = order.get('price', 0)
                 system_name = order.get('system_name', 'Unknown')
-                distance = order.get('distance_to_sosala', 999)
+                distance = order.get('distance_to_reference', 999)
                 
                 # Check if this is a good deal
                 if price <= jita_price:
@@ -218,14 +227,14 @@ class MarketScanner:
                         'savings_percent': ((jita_price - price) / jita_price) * 100 if jita_price > 0 else 0,
                         'system_id': order.get('system_id'),
                         'system_name': system_name,
-                        'distance_to_sosala': distance,
+                        'distance_to_reference': distance,
                         'volume_remain': order.get('volume_remain', 0),
                         'order_id': order.get('order_id')
                     }
                     good_deals.append(good_deal)
                     logger.info(
                         f"Found good deal: {type_name} in {system_name} "
-                        f"({distance} jumps from Sosala) for {price:,.2f} ISK "
+                        f"({distance} jumps from {self.reference_system_name}) for {price:,.2f} ISK "
                         f"(Jita: {jita_price:,.2f} ISK, "
                         f"Savings: {good_deal['savings']:,.2f} ISK, "
                         f"{good_deal['savings_percent']:.2f}%)"

@@ -14,6 +14,7 @@ import schedule
 from market_scanner import MarketScanner
 from notification_manager import NotificationManager
 import config
+from esi_client import ESIClient
 
 # Set up logging
 logging.basicConfig(
@@ -29,9 +30,25 @@ logger = logging.getLogger(__name__)
 class ServiceManager:
     """Manager for running the market bot as a background service."""
     
-    def __init__(self):
-        """Initialize the service manager."""
-        self.scanner = MarketScanner()
+    def __init__(self, reference_system_id=None):
+        """
+        Initialize the service manager.
+        
+        Args:
+            reference_system_id: Optional system ID to use as reference
+        """
+        # If a reference system ID is provided, update the config
+        if reference_system_id:
+            config.REFERENCE_SYSTEM_ID = reference_system_id
+            # Get the system name from the ESI API
+            esi_client = ESIClient()
+            system_info = esi_client.get_system_info(reference_system_id)
+            config.REFERENCE_SYSTEM_NAME = system_info.get('name', f'System {reference_system_id}')
+        
+        self.scanner = MarketScanner(
+            reference_system_id=config.REFERENCE_SYSTEM_ID,
+            reference_system_name=config.REFERENCE_SYSTEM_NAME
+        )
         self.notification_manager = NotificationManager()
         self.running = False
         self.stop_event = threading.Event()
@@ -39,7 +56,7 @@ class ServiceManager:
     def scan_for_deals(self):
         """Run a single scan for good deals."""
         try:
-            logger.info("Starting market scan...")
+            logger.info(f"Starting market scan for {config.REFERENCE_SYSTEM_NAME}...")
             
             # Find good deals
             good_deals = self.scanner.find_good_deals()
@@ -50,7 +67,7 @@ class ServiceManager:
                 
                 # Save the deals to a JSON file
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                filename = f"deals_{timestamp}.json"
+                filename = f"deals_{config.REFERENCE_SYSTEM_NAME.lower()}_{timestamp}.json"
                 
                 with open(filename, 'w') as f:
                     json.dump(good_deals, f, indent=2)
@@ -72,7 +89,7 @@ class ServiceManager:
             logger.warning("Service is already running.")
             return
         
-        logger.info("Starting EVE Online Market Bot service...")
+        logger.info(f"Starting EVE Online Market Bot service for {config.REFERENCE_SYSTEM_NAME}...")
         self.running = True
         
         # Run an initial scan
@@ -118,8 +135,13 @@ class ServiceManager:
         sys.exit(0)
 
 
-def run_as_daemon():
-    """Run the service as a daemon process."""
+def run_as_daemon(reference_system_id=None):
+    """
+    Run the service as a daemon process.
+    
+    Args:
+        reference_system_id: Optional system ID to use as reference
+    """
     try:
         # Create a child process
         pid = os.fork()
@@ -161,11 +183,16 @@ def run_as_daemon():
         f.write(str(os.getpid()))
     
     # Start the service
-    service = ServiceManager()
+    service = ServiceManager(reference_system_id)
     service.start()
 
 
-def run_in_foreground():
-    """Run the service in the foreground."""
-    service = ServiceManager()
+def run_in_foreground(reference_system_id=None):
+    """
+    Run the service in the foreground.
+    
+    Args:
+        reference_system_id: Optional system ID to use as reference
+    """
+    service = ServiceManager(reference_system_id)
     service.start()
