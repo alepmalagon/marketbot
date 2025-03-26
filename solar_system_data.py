@@ -61,12 +61,12 @@ def discover_regions_within_jumps(
     Returns:
         Set of region IDs within the specified number of jumps
     """
-    start_system_id = str(start_system_id)
+    start_system_id = int(start_system_id)
     if start_system_id not in solar_systems:
         logger.error(f"Starting system ID {start_system_id} not found in solar system data")
         return set()
     
-    logger.info(f"Discovering regions within {max_jumps} jumps of {solar_systems[start_system_id]['name']}...")
+    logger.info(f"Discovering regions within {max_jumps} jumps of {solar_systems[start_system_id]['solar_system_name']}...")
     
     # Set to store discovered region IDs
     region_ids = set()
@@ -96,14 +96,14 @@ def discover_regions_within_jumps(
         
         # Add the region ID to our set
         region_ids.add(system['region_id'])
-        logger.info(f"Discovered region ID: {system['region']} ({system['region_id']})")   
+        logger.info(f"Discovered region ID: {system['region_name']} ({system['region_id']})")   
         # Explore adjacent systems
         for adjacent_id in system['adjacent']:
             if adjacent_id not in visited:
                 visited.add(adjacent_id)
                 queue.append((adjacent_id, distance + 1))
     
-    logger.info(f"Discovered {len(region_ids)} regions within {max_jumps} jumps of {solar_systems[start_system_id]['name']}")
+    logger.info(f"Discovered {len(region_ids)} regions within {max_jumps} jumps of {solar_systems[start_system_id]['solar_system_name']}")
     return region_ids
 
 def get_regions_to_search(solar_system_data_path: str = "solar_systems.pickle", reference_system_id: int = None) -> List[int]:
