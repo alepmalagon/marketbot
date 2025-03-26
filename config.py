@@ -78,7 +78,7 @@ T1_BATTLESHIP_TYPE_IDS = [
 ]
 
 # Maximum number of jumps from Sosala to consider
-MAX_JUMPS = 4
+MAX_JUMPS = 8
 
 # Minimum price to consider (to filter out low-value orders)
 MIN_PRICE = 150000000  # 150 million ISK
