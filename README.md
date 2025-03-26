@@ -16,6 +16,7 @@ A tool for finding good market deals on T1 battleship hulls near any system in E
 - Sends desktop notifications for good deals
 - Supports any system as a reference point (not just Sosala)
 - Customizable jump range and hull types
+- Web interface for easy interaction with the market scanner
 
 ## Requirements
 
@@ -119,6 +120,33 @@ python main.py --mode windows-service remove
 - `--system`: System ID or name to use as reference (defaults to Sosala if not provided)
 - `--jumps`: Maximum number of jumps from reference system to consider (defaults to 8)
 - `--hulls`: Comma-separated list of hull type IDs to search for (defaults to all T1 battleships)
+
+### Web Interface
+
+You can also use the web interface to interact with the market scanner:
+
+```
+# Run the web interface using main.py
+python main.py --mode web-ui
+
+# Or use the standalone web application
+python web_app.py
+```
+
+The web interface provides a user-friendly way to:
+- Select a reference system with autocomplete
+- Choose which battleship hulls to search for
+- Set the maximum number of jumps
+- View and sort the results in a table
+
+Additional options for the standalone web application:
+```
+# Run on a specific host and port
+python web_app.py --host 127.0.0.1 --port 8080
+
+# Run in debug mode
+python web_app.py --debug
+```
 
 ## How It Works
 
