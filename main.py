@@ -19,6 +19,7 @@ from market_scanner import MarketScanner
 from service_manager import ServiceManager, run_as_daemon, run_in_foreground
 import config
 from esi_client import ESIClient
+from solar_system_data import load_solar_systems
 
 # Set up logging
 logging.basicConfig(
@@ -27,13 +28,70 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-def run_single_scan(reference_system_id=None):
+def find_system_id_by_name(system_name: str) -> int:
+    """
+    Find a system ID by its name using the solar system data.
+    
+    Args:
+        system_name: The name of the system to find
+        
+    Returns:
+        The system ID if found, or None if not found
+    """
+    logger.info(f"Looking up system ID for name: {system_name}")
+    
+    # Load solar system data
+    solar_systems = load_solar_systems(config.SOLAR_SYSTEM_DATA_PATH)
+    
+    if not solar_systems:
+        logger.warning("No solar system data available, cannot look up system by name")
+        return None
+    
+    # Search for the system by name (case-insensitive)
+    system_name_lower = system_name.lower()
+    for system_id, system_data in solar_systems.items():
+        if system_data['solar_system_name'].lower() == system_name_lower:
+            logger.info(f"Found system ID {system_id} for name {system_name}")
+            return system_id
+    
+    logger.warning(f"No system found with name: {system_name}")
+    return None
+
+def resolve_reference_system(system_input):
+    """
+    Resolve the reference system from user input, which could be an ID or name.
+    
+    Args:
+        system_input: The system ID or name provided by the user
+        
+    Returns:
+        The resolved system ID or None if not resolved
+    """
+    if system_input is None:
+        return None
+    
+    # Check if the input is already a numeric ID
+    if isinstance(system_input, int) or (isinstance(system_input, str) and system_input.isdigit()):
+        return int(system_input)
+    
+    # Otherwise, treat it as a system name and look up the ID
+    return find_system_id_by_name(system_input)
+
+def run_single_scan(reference_system=None):
     """
     Run a single market scan and output the results.
     
     Args:
-        reference_system_id: Optional system ID to use as reference
+        reference_system: Optional system ID or name to use as reference
     """
+    # Resolve the reference system (could be ID or name)
+    reference_system_id = resolve_reference_system(reference_system)
+    
+    # If we couldn't resolve the system, use the default
+    if reference_system_id is None and reference_system is not None:
+        logger.warning(f"Could not resolve system: {reference_system}, using default system")
+        return
+    
     # If a reference system ID is provided, update the config
     if reference_system_id:
         config.REFERENCE_SYSTEM_ID = reference_system_id
@@ -124,8 +182,8 @@ def main():
     
     parser.add_argument(
         "--system",
-        type=int,
-        help="System ID to use as reference (defaults to Sosala if not provided)"
+        type=str,
+        help="System ID or name to use as reference (defaults to Sosala if not provided)"
     )
     
     # Parse arguments
