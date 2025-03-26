@@ -37,8 +37,11 @@ DOMAIN_REGION_ID = 10000043       # Domain
 HEIMATAR_REGION_ID = 10000030     # Heimatar
 DEVOID_REGION_ID = 10000036       # Devoid
 
-# List of regions to search for orders
-SEARCH_REGION_IDS = [
+# Path to the solar system data file
+SOLAR_SYSTEM_DATA_PATH = os.getenv('SOLAR_SYSTEM_DATA_PATH', 'solar_systems.pickle')
+
+# Fallback list of regions to search for orders if solar system data is not available
+FALLBACK_REGION_IDS = [
     LONETREK_REGION_ID,
     BLEAK_LANDS_REGION_ID,
     DOMAIN_REGION_ID,
