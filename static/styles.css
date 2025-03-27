@@ -107,14 +107,11 @@ input[type="number"]:focus {
     margin-top: 10px;
 }
 
-.category-header {
+.hulls-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
     width: 100%;
-    margin-top: 15px;
-    margin-bottom: 5px;
-    padding-bottom: 5px;
-    border-bottom: 1px solid var(--highlight-color);
-    color: var(--highlight-color);
-    font-size: 1.2rem;
 }
 
 .hull-checkbox {
@@ -122,7 +119,7 @@ input[type="number"]:focus {
     align-items: center;
     background-color: var(--input-bg);
     padding: 8px 12px;
-    margin: 5px;
+    margin: 0;
     border-radius: 4px;
     border: 1px solid var(--border-color);
     cursor: pointer;
