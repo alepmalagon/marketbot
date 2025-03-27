@@ -112,7 +112,9 @@ class ServiceManager:
         # If hull_ids is provided, update the config
         if hull_ids is not None:
             config.T1_BATTLESHIP_TYPE_IDS = hull_ids
-            logger.info(f"Using custom hull type IDs: {config.T1_BATTLESHIP_TYPE_IDS}")
+            # Also update the ALL_BATTLESHIP_TYPE_IDS to only include the selected hulls
+            config.ALL_BATTLESHIP_TYPE_IDS = hull_ids
+            logger.info(f"Using custom hull type IDs: {hull_ids}")
         
         self.scanner = MarketScanner(
             reference_system_id=config.REFERENCE_SYSTEM_ID,
