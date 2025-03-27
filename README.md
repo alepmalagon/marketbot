@@ -1,10 +1,10 @@
 # EVE Online Market Bot
 
-A tool for finding good market deals on T1 battleship hulls near any system in EVE Online.
+A tool for finding good market deals on ship hulls near any system in EVE Online.
 
 ## Features
 
-- Fetches market orders for T1 battleship hulls from the EVE ESI API
+- Fetches market orders for ship hulls from the EVE ESI API
 - Compares prices with Jita (the main trade hub)
 - Filters orders by:
   - Minimum price threshold
@@ -17,6 +17,7 @@ A tool for finding good market deals on T1 battleship hulls near any system in E
 - Supports any system as a reference point (not just Sosala)
 - Customizable jump range and hull types
 - Web interface for easy interaction with the market scanner
+- EVERef API integration for comprehensive ship data
 
 ## Requirements
 
@@ -28,6 +29,8 @@ A tool for finding good market deals on T1 battleship hulls near any system in E
   - `plyer` (for notifications)
   - `psutil` (for service management)
   - `pywin32` (for Windows service, Windows only)
+  - `flask` (for web interface)
+  - `flask-cors` (for web API)
 
 ## Installation
 
@@ -123,24 +126,12 @@ python main.py --mode windows-service remove
 
 ### Web Interface
 
-You can also use the web interface to interact with the market scanner:
+You can use the standalone web application to interact with the market scanner:
 
 ```
-# Run the web interface using main.py
-python main.py --mode web-ui
-
-# Or use the standalone web application
+# Run the web interface
 python web_app.py
-```
 
-The web interface provides a user-friendly way to:
-- Select a reference system with autocomplete
-- Choose which battleship hulls to search for
-- Set the maximum number of jumps
-- View and sort the results in a table
-
-Additional options for the standalone web application:
-```
 # Run on a specific host and port
 python web_app.py --host 127.0.0.1 --port 8080
 
@@ -148,11 +139,42 @@ python web_app.py --host 127.0.0.1 --port 8080
 python web_app.py --debug
 ```
 
+The web interface provides a user-friendly way to:
+- Select a reference system with autocomplete
+- Choose which ship hulls to search for
+- Set the maximum number of jumps
+- View and sort the results in a table
+- Switch between light and dark themes
+
+## EVERef Integration
+
+The bot can now use the EVERef API to fetch reference data about ships and other items in EVE Online.
+
+### Updating Ship Data
+
+To update the ship data from EVERef:
+```
+python everef_data_updater.py
+```
+
+This will:
+1. Fetch the latest ship data from the EVERef API
+2. Save it to a cache file
+3. Generate a Python module with updated type IDs
+
+### EVERef Client
+
+The `everef_client.py` module provides a client for interacting with the EVERef API. It includes:
+
+- Caching to reduce API calls
+- Rate limiting to avoid overwhelming the API
+- Methods for fetching type information, region data, and more
+
 ## How It Works
 
 The script will:
 1. Automatically discover all regions within the configured jump range of your reference system using a BFS algorithm
-2. Fetch all sell orders for T1 battleship hulls in the discovered regions
+2. Fetch all sell orders for ship hulls in the discovered regions
 3. Filter orders by minimum price and maximum distance from your reference system
 4. Compare prices with the lowest Jita prices
 5. Output good deals to the console
@@ -181,34 +203,58 @@ You can configure the bot by editing the `config.py` file or by setting environm
 - `MIN_SAVINGS_PERCENT_FOR_NOTIFICATION`: Minimum savings percentage to trigger a notification (default: 5.0%)
 - `MAX_NOTIFICATIONS`: Maximum number of notifications to show at once (default: 5)
 
-## Hull Type IDs
+## Ship Type IDs
 
-The default configuration includes all T1 battleship hulls. If you want to specify custom hull types with the `--hulls` parameter, here are the type IDs for reference:
+The default configuration includes various ship hulls. If you want to specify custom hull types with the `--hulls` parameter, here are some of the type IDs for reference:
 
-### Amarr
+### T1 Battleships
 - 24692: Abaddon
 - 642: Apocalypse
 - 643: Armageddon
-
-### Caldari
 - 638: Raven
 - 24688: Rokh
 - 640: Scorpion
-
-### Gallente
 - 645: Dominix
 - 24690: Hyperion
 - 641: Megathron
-
-### Minmatar
 - 24694: Maelstrom
 - 639: Tempest
 - 644: Typhoon
 
-## EVE ESI API
+### Black Ops Battleships
+- 22436: Widow
+- 22428: Redeemer
+- 22440: Panther
+- 22430: Sin
 
-This project uses the [EVE ESI API](https://esi.evetech.net/docs/esi_introduction.html) to fetch market data. The API is public and does not require authentication for the endpoints used in this project.
+### Marauder Battleships
+- 28665: Vargur
+- 28710: Golem
+- 28659: Paladin
+- 28661: Kronos
+
+### Command Ships
+- 22442: Absolution
+- 22474: Damnation
+- 22448: Nighthawk
+- 22470: Vulture
+- 22466: Astarte
+- 22464: Eos
+- 22460: Claymore
+- 22456: Sleipnir
+
+## API References
+
+This project uses the following APIs:
+
+- [EVE ESI API](https://esi.evetech.net/docs/esi_introduction.html) - Official EVE Online API for market data
+- [EVERef API](https://docs.everef.net/) - Third-party reference data API for EVE Online
 
 ## License
 
 MIT
+
+## Acknowledgements
+
+- EVE Online and the EVE logo are the registered trademarks of CCP hf.
+- EVERef is a third-party service providing reference data for EVE Online.
