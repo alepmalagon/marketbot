@@ -12,6 +12,7 @@ from esi_client import ESIClient
 from everef_market_client import EVERefMarketClient
 from solar_system_data import get_regions_to_search
 import config
+from ship_hulls import get_ship_info
 
 logging.basicConfig(
     level=logging.INFO,
@@ -45,8 +46,14 @@ class EnhancedMarketScanner:
     def get_type_name(self, type_id: int) -> str:
         """Get the name of a type."""
         if type_id not in self.type_names:
-            type_info = self.esi_client.get_type_info(type_id)
-            self.type_names[type_id] = type_info.get('name', f'Unknown Type {type_id}')
+            # First try to get the name from our static ship hull data
+            ship_info = get_ship_info(type_id)
+            if ship_info["name"] != f"Unknown Type {type_id}":
+                self.type_names[type_id] = ship_info["name"]
+            else:
+                # Fall back to ESI API if not found in static data
+                type_info = self.esi_client.get_type_info(type_id)
+                self.type_names[type_id] = type_info.get('name', f'Unknown Type {type_id}')
         return self.type_names[type_id]
     
     def get_system_name(self, system_id: int) -> str:
