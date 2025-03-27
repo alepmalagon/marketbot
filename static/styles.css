@@ -231,6 +231,43 @@ input[type="number"]:focus {
     box-shadow: 0 0 0 2px rgba(0, 168, 255, 0.2);
 }
 
+/* Ship Type Selector */
+.ship-type-selector {
+    display: flex;
+    gap: 15px;
+    margin-top: 10px;
+}
+
+.ship-type-option {
+    display: inline-flex;
+    align-items: center;
+    background-color: var(--input-bg);
+    padding: 10px 15px;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex: 1;
+    justify-content: center;
+}
+
+.ship-type-option:hover {
+    border-color: var(--highlight-color);
+    background-color: rgba(0, 168, 255, 0.1);
+}
+
+.ship-type-option input[type="radio"] {
+    margin-right: 8px;
+}
+
+.ship-type-option span {
+    font-weight: 500;
+    font-size: 1.1rem;
+    font-family: 'Rajdhani', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
 .hulls-container {
     display: flex;
     flex-direction: column;
@@ -438,6 +475,11 @@ footer a:hover {
     }
     
     .form-row {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .ship-type-selector {
         flex-direction: column;
         gap: 10px;
     }

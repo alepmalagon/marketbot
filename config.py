@@ -95,8 +95,79 @@ MARAUDER_TYPE_IDS = [
     28661,  # Kronos (Gallente)
 ]
 
+# Faction Battleship type IDs
+FACTION_BATTLESHIP_TYPE_IDS = [
+    17726,  # Armageddon Navy Issue (Amarr)
+    17736,  # Apocalypse Navy Issue (Amarr)
+    32305,  # Praxis (SoCT)
+    17738,  # Raven Navy Issue (Caldari)
+    17740,  # Scorpion Navy Issue (Caldari)
+    17732,  # Dominix Navy Issue (Gallente)
+    17728,  # Megathron Navy Issue (Gallente)
+    17722,  # Typhoon Fleet Issue (Minmatar)
+    17734,  # Tempest Fleet Issue (Minmatar)
+]
+
+# Pirate Faction Battleship type IDs
+PIRATE_BATTLESHIP_TYPE_IDS = [
+    33820,  # Barghest (Guristas/Caldari)
+    17918,  # Bhaalgorn (Blood Raiders/Amarr)
+    17920,  # Nightmare (Sansha/Amarr)
+    17922,  # Rattlesnake (Guristas/Caldari)
+    17924,  # Machariel (Angel Cartel/Minmatar)
+    17926,  # Vindicator (Serpentis/Gallente)
+    33553,  # Nestor (Sisters of EVE)
+]
+
+# Command Ship type IDs
+COMMAND_SHIP_TYPE_IDS = [
+    22442,  # Absolution (Amarr)
+    22474,  # Damnation (Amarr)
+    22448,  # Nighthawk (Caldari)
+    22470,  # Vulture (Caldari)
+    22466,  # Astarte (Gallente)
+    22464,  # Eos (Gallente)
+    22460,  # Claymore (Minmatar)
+    22456,  # Sleipnir (Minmatar)
+]
+
+# Strategic Cruiser type IDs
+STRATEGIC_CRUISER_TYPE_IDS = [
+    29986,  # Legion (Amarr)
+    29984,  # Tengu (Caldari)
+    29988,  # Proteus (Gallente)
+    29990,  # Loki (Minmatar)
+]
+
+# Heavy Assault Cruiser type IDs
+HAC_TYPE_IDS = [
+    12017,  # Zealot (Amarr)
+    12019,  # Sacrilege (Amarr)
+    12011,  # Eagle (Caldari)
+    12013,  # Cerberus (Caldari)
+    12023,  # Deimos (Gallente)
+    12021,  # Ishtar (Gallente)
+    12015,  # Vagabond (Minmatar)
+    12025,  # Muninn (Minmatar)
+]
+
+# Recon Ship type IDs
+RECON_SHIP_TYPE_IDS = [
+    11965,  # Pilgrim (Amarr)
+    11957,  # Curse (Amarr)
+    11963,  # Falcon (Caldari)
+    11961,  # Rook (Caldari)
+    11971,  # Arazu (Gallente)
+    11969,  # Lachesis (Gallente)
+    11959,  # Huginn (Minmatar)
+    11967,  # Rapier (Minmatar)
+]
+
 # Combined list of all battleship type IDs
-ALL_BATTLESHIP_TYPE_IDS = T1_BATTLESHIP_TYPE_IDS + BLACK_OPS_TYPE_IDS + MARAUDER_TYPE_IDS
+ALL_BATTLESHIP_TYPE_IDS = T1_BATTLESHIP_TYPE_IDS + BLACK_OPS_TYPE_IDS + MARAUDER_TYPE_IDS + FACTION_BATTLESHIP_TYPE_IDS + PIRATE_BATTLESHIP_TYPE_IDS
+
+# Combined list of all cruiser type IDs
+ALL_CRUISER_TYPE_IDS = COMMAND_SHIP_TYPE_IDS + STRATEGIC_CRUISER_TYPE_IDS + HAC_TYPE_IDS + RECON_SHIP_TYPE_IDS
 
 # Maximum number of jumps from reference system to consider
 MAX_JUMPS = 8
