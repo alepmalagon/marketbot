@@ -45,6 +45,7 @@ def load_solar_systems(filepath: str) -> Dict[int, SolarSystem]:
             sample_key = next(iter(solar_systems))
             logger.info(f"Sample solar system key type: {type(sample_key).__name__}")
             logger.info(f"Sample solar system data structure: {list(solar_systems[sample_key].keys())}")
+            logger.info(f"Total number of solar systems loaded: {len(solar_systems)}")
             
         logger.info(f"Successfully loaded {len(solar_systems)} solar systems from {filepath}")
         return solar_systems
@@ -79,6 +80,7 @@ def discover_regions_within_jumps(
     if isinstance(start_system_id, str):
         try:
             start_system_id = int(start_system_id)
+            logger.info(f"Converted string system ID '{start_system_id}' to integer")
         except ValueError:
             logger.error(f"Invalid system ID format: {start_system_id}")
             return set()
@@ -144,17 +146,20 @@ def discover_regions_within_jumps(
         # Explore adjacent systems
         adjacent_count = 0
         for adjacent_id_str in system['adjacent']:
-            adjacent_id = int(adjacent_id_str)
-            if adjacent_id not in visited:
-                visited.add(adjacent_id)
-                queue.append((adjacent_id, distance + 1))
-                adjacent_count += 1
-                
-                # Track systems by distance for statistics
-                next_distance = distance + 1
-                if next_distance not in systems_by_distance:
-                    systems_by_distance[next_distance] = 0
-                systems_by_distance[next_distance] += 1
+            try:
+                adjacent_id = int(adjacent_id_str)
+                if adjacent_id not in visited:
+                    visited.add(adjacent_id)
+                    queue.append((adjacent_id, distance + 1))
+                    adjacent_count += 1
+                    
+                    # Track systems by distance for statistics
+                    next_distance = distance + 1
+                    if next_distance not in systems_by_distance:
+                        systems_by_distance[next_distance] = 0
+                    systems_by_distance[next_distance] += 1
+            except ValueError:
+                logger.warning(f"Invalid adjacent system ID format: {adjacent_id_str}")
         
         if adjacent_count > 0:
             logger.debug(f"Added {adjacent_count} adjacent systems from {system['solar_system_name']} (ID: {system_id})")
@@ -196,16 +201,21 @@ def find_system_id_by_name(solar_systems: Dict[int, SolarSystem], system_name: s
             logger.info(f"Found system ID {system_id} for name {system_name}")
             return system_id
     
+    # Log some available system names for debugging
+    sample_systems = [(system_id, system_data['solar_system_name']) 
+                      for system_id, system_data in list(solar_systems.items())[:10]]
+    logger.debug(f"Sample available systems: {sample_systems}")
     logger.warning(f"No system found with name: {system_name}")
     return None
 
-def get_regions_to_search(solar_system_data_path: str = None, reference_system_id: int = None) -> List[int]:
+def get_regions_to_search(solar_system_data_path: str = None, reference_system_id: int = None, max_jumps: int = None) -> List[int]:
     """
     Get the list of region IDs to search based on the configured max jumps from the reference system.
     
     Args:
         solar_system_data_path: Path to the pickle file containing solar system data
         reference_system_id: ID of the reference system (defaults to config.REFERENCE_SYSTEM_ID)
+        max_jumps: Maximum number of jumps to consider (defaults to config.MAX_JUMPS)
         
     Returns:
         List of region IDs to search
@@ -213,8 +223,9 @@ def get_regions_to_search(solar_system_data_path: str = None, reference_system_i
     # Use the provided paths or fall back to configured values
     solar_system_data_path = solar_system_data_path or config.SOLAR_SYSTEM_DATA_PATH
     reference_system_id = reference_system_id or config.REFERENCE_SYSTEM_ID
+    max_jumps = max_jumps if max_jumps is not None else config.MAX_JUMPS
     
-    logger.info(f"Getting regions to search around system ID {reference_system_id} with max jumps {config.MAX_JUMPS}")
+    logger.info(f"Getting regions to search around system ID {reference_system_id} with max jumps {max_jumps}")
     logger.info(f"Using solar system data from: {solar_system_data_path}")
     
     # Load solar system data
@@ -230,7 +241,7 @@ def get_regions_to_search(solar_system_data_path: str = None, reference_system_i
     region_ids = discover_regions_within_jumps(
         solar_systems, 
         reference_system_id, 
-        config.MAX_JUMPS
+        max_jumps
     )
     
     # Convert region IDs to integers
