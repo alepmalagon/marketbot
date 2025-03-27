@@ -11,7 +11,7 @@ import json
 import threading
 import schedule
 
-from market_scanner import MarketScanner
+from enhanced_market_scanner import EnhancedMarketScanner
 from notification_manager import NotificationManager
 import config
 from esi_client import ESIClient
@@ -116,9 +116,10 @@ class ServiceManager:
             config.ALL_BATTLESHIP_TYPE_IDS = hull_ids
             logger.info(f"Using custom hull type IDs: {hull_ids}")
         
-        self.scanner = MarketScanner(
+        self.scanner = EnhancedMarketScanner(
             reference_system_id=config.REFERENCE_SYSTEM_ID,
-            reference_system_name=config.REFERENCE_SYSTEM_NAME
+            reference_system_name=config.REFERENCE_SYSTEM_NAME,
+            use_everef=True  # Use EVERef market data for faster retrieval
         )
         self.notification_manager = NotificationManager()
         self.running = False
