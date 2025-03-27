@@ -1,6 +1,7 @@
 /* EVE Online Market Bot Web UI Styles */
 
 :root {
+    /* Dark Theme (Default) */
     --primary-color: #1a1a2e;
     --secondary-color: #16213e;
     --accent-color: #0f3460;
@@ -10,6 +11,23 @@
     --input-bg: #0c0c1d;
     --success-color: #4caf50;
     --warning-color: #ff9800;
+    --table-hover-bg: rgba(15, 52, 96, 0.3);
+    --shadow-color: rgba(0, 0, 0, 0.2);
+}
+
+/* Light Theme */
+[data-theme="light"] {
+    --primary-color: #f5f5f7;
+    --secondary-color: #ffffff;
+    --accent-color: #007bff;
+    --highlight-color: #e94560;
+    --text-color: #333333;
+    --border-color: #dddddd;
+    --input-bg: #ffffff;
+    --success-color: #28a745;
+    --warning-color: #ffc107;
+    --table-hover-bg: rgba(0, 123, 255, 0.1);
+    --shadow-color: rgba(0, 0, 0, 0.1);
 }
 
 * {
@@ -23,6 +41,7 @@ body {
     background-color: var(--primary-color);
     color: var(--text-color);
     line-height: 1.6;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .container {
@@ -37,7 +56,9 @@ header {
     padding: 20px;
     background-color: var(--secondary-color);
     border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 8px var(--shadow-color);
+    position: relative;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 header h1 {
@@ -51,12 +72,71 @@ header p {
     opacity: 0.8;
 }
 
+/* Theme Toggle Switch */
+.theme-switch-wrapper {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    align-items: center;
+}
+
+.theme-switch {
+    display: inline-block;
+    height: 26px;
+    position: relative;
+    width: 50px;
+}
+
+.theme-switch input {
+    display: none;
+}
+
+.slider {
+    background-color: var(--accent-color);
+    bottom: 0;
+    cursor: pointer;
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+    transition: .4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    background-color: white;
+    bottom: 4px;
+    content: "";
+    height: 18px;
+    left: 4px;
+    position: absolute;
+    transition: .4s;
+    width: 18px;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: var(--highlight-color);
+}
+
+input:checked + .slider:before {
+    transform: translateX(24px);
+}
+
+.theme-switch-wrapper .theme-icon {
+    margin: 0 8px;
+    font-size: 1.2rem;
+    color: var(--text-color);
+}
+
 .search-form {
     background-color: var(--secondary-color);
     padding: 25px;
     border-radius: 8px;
     margin-bottom: 30px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 8px var(--shadow-color);
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .form-group {
@@ -91,6 +171,7 @@ input[type="number"] {
     background-color: var(--input-bg);
     color: var(--text-color);
     font-size: 1rem;
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
 input[type="text"]:focus,
@@ -123,7 +204,7 @@ input[type="number"]:focus {
     border-radius: 4px;
     border: 1px solid var(--border-color);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.2s ease, background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .hull-checkbox:hover {
@@ -165,7 +246,8 @@ input[type="number"]:focus {
     padding: 25px;
     border-radius: 8px;
     margin-bottom: 30px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 8px var(--shadow-color);
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .results-header {
@@ -201,16 +283,18 @@ th, td {
     padding: 12px 15px;
     text-align: left;
     border-bottom: 1px solid var(--border-color);
+    transition: border-color 0.3s ease;
 }
 
 th {
     background-color: var(--accent-color);
     color: var(--text-color);
     font-weight: bold;
+    transition: background-color 0.3s ease;
 }
 
 tr:hover {
-    background-color: rgba(15, 52, 96, 0.3);
+    background-color: var(--table-hover-bg);
 }
 
 .loading-spinner {
@@ -237,6 +321,7 @@ footer {
     padding: 20px;
     border-top: 1px solid var(--border-color);
     opacity: 0.7;
+    transition: border-color 0.3s ease;
 }
 
 footer a {
@@ -262,6 +347,14 @@ footer a:hover {
     
     header h1 {
         font-size: 2rem;
+    }
+    
+    .theme-switch-wrapper {
+        position: relative;
+        top: 0;
+        right: 0;
+        justify-content: center;
+        margin-top: 15px;
     }
     
     .results-header {

@@ -15,6 +15,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const resultsBody = document.getElementById('results-body');
     const systemInfo = document.getElementById('system-info');
     const jumpsInfo = document.getElementById('jumps-info');
+    const themeToggle = document.getElementById('theme-toggle');
+
+    // Theme Handling
+    initTheme();
+    themeToggle.addEventListener('change', switchTheme);
 
     // Load battleship hulls
     loadBattleships();
@@ -26,6 +31,44 @@ document.addEventListener('DOMContentLoaded', function() {
     scanButton.addEventListener('click', runScan);
 
     // Functions
+    function initTheme() {
+        // Check for saved theme preference or use default
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        
+        // Update toggle position based on current theme
+        themeToggle.checked = savedTheme === 'light';
+        
+        // Update theme icons visibility
+        updateThemeIcons(savedTheme);
+    }
+    
+    function switchTheme(e) {
+        const newTheme = e.target.checked ? 'light' : 'dark';
+        
+        // Update data attribute on html element
+        document.documentElement.setAttribute('data-theme', newTheme);
+        
+        // Save preference to localStorage
+        localStorage.setItem('theme', newTheme);
+        
+        // Update theme icons visibility
+        updateThemeIcons(newTheme);
+    }
+    
+    function updateThemeIcons(theme) {
+        const moonIcon = document.querySelector('.theme-icon .fa-moon');
+        const sunIcon = document.querySelector('.theme-icon .fa-sun');
+        
+        if (theme === 'dark') {
+            moonIcon.style.opacity = '1';
+            sunIcon.style.opacity = '0.5';
+        } else {
+            moonIcon.style.opacity = '0.5';
+            sunIcon.style.opacity = '1';
+        }
+    }
+
     async function loadBattleships() {
         try {
             const response = await fetch('/api/battleships');
