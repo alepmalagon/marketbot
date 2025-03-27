@@ -6,12 +6,19 @@
     <title>EVE Online Market Bot</title>
     <link rel="stylesheet" href="/static/styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="icon" href="/static/eve-logo.svg" type="image/svg+xml">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1><i class="fas fa-rocket"></i> EVE Online Market Bot</h1>
-            <p>Find the best battleship deals near your staging system</p>
+            <div class="logo">
+                <img src="/static/eve-logo.svg" alt="EVE Logo" class="eve-logo">
+            </div>
+            <div class="header-content">
+                <h1>EVE Online Market Bot</h1>
+                <p>Find the best battleship deals across New Eden</p>
+            </div>
             
             <!-- Theme Toggle Switch -->
             <div class="theme-switch-wrapper">
@@ -25,25 +32,27 @@
         </header>
 
         <div class="search-form">
-            <div class="form-group">
-                <label for="system-input">Reference System:</label>
-                <div class="input-with-icon">
-                    <i class="fas fa-globe"></i>
-                    <input type="text" id="system-input" placeholder="Enter system name or ID (e.g., Sosala)" list="systems-list">
-                    <datalist id="systems-list"></datalist>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="system-input">Reference System</label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-globe"></i>
+                        <input type="text" id="system-input" placeholder="Enter system name or ID (e.g., Sosala)" list="systems-list">
+                        <datalist id="systems-list"></datalist>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="jumps-input">Maximum Jumps</label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-route"></i>
+                        <input type="number" id="jumps-input" min="1" max="20" value="8">
+                    </div>
                 </div>
             </div>
 
             <div class="form-group">
-                <label for="jumps-input">Maximum Jumps:</label>
-                <div class="input-with-icon">
-                    <i class="fas fa-route"></i>
-                    <input type="number" id="jumps-input" min="1" max="20" value="8">
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label>Battleship Hulls:</label>
+                <label>Battleship Hulls</label>
                 <div class="hulls-container" id="hulls-container">
                     <div class="loading-spinner" id="hulls-loading">
                         <i class="fas fa-spinner fa-spin"></i> Loading hulls...
@@ -58,7 +67,7 @@
 
         <div class="results-container" id="results-container" style="display: none;">
             <div class="results-header">
-                <h2>Market Deals</h2>
+                <h2><i class="fas fa-chart-line"></i> Market Deals</h2>
                 <div class="results-info">
                     <span id="system-info"></span> | <span id="jumps-info"></span>
                 </div>
