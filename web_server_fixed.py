@@ -14,11 +14,11 @@ from datetime import datetime
 from flask import Flask, request, jsonify, render_template, send_from_directory
 from flask_cors import CORS
 
-from enhanced_market_scanner_fixed_v2 import EnhancedMarketScanner
+from enhanced_market_scanner import EnhancedMarketScanner
 import config
 from esi_client import ESIClient
 from solar_system_data import load_solar_systems
-from main_fixed import resolve_reference_system, parse_hull_ids
+from main import resolve_reference_system, parse_hull_ids
 
 # Set up logging
 logging.basicConfig(
