@@ -47,15 +47,35 @@ def serve_static(path):
 
 @app.route('/api/battleships', methods=['GET'])
 def get_battleships():
-    """Get the list of T1 battleship hulls."""
+    """Get the list of all battleship hulls."""
     esi_client = ESIClient()
     battleships = []
     
+    # Get T1 Battleships
     for type_id in config.T1_BATTLESHIP_TYPE_IDS:
         type_info = esi_client.get_type_info(type_id)
         battleships.append({
             'id': type_id,
-            'name': type_info.get('name', f'Unknown Type {type_id}')
+            'name': type_info.get('name', f'Unknown Type {type_id}'),
+            'category': 'T1 Battleship'
+        })
+    
+    # Get Black Ops Battleships
+    for type_id in config.BLACK_OPS_TYPE_IDS:
+        type_info = esi_client.get_type_info(type_id)
+        battleships.append({
+            'id': type_id,
+            'name': type_info.get('name', f'Unknown Type {type_id}'),
+            'category': 'Black Ops'
+        })
+    
+    # Get Marauder Battleships
+    for type_id in config.MARAUDER_TYPE_IDS:
+        type_info = esi_client.get_type_info(type_id)
+        battleships.append({
+            'id': type_id,
+            'name': type_info.get('name', f'Unknown Type {type_id}'),
+            'category': 'Marauder'
         })
     
     return jsonify(battleships)

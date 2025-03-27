@@ -79,6 +79,25 @@ T1_BATTLESHIP_TYPE_IDS = [
     644,    # Typhoon
 ]
 
+# Black Ops Battleship type IDs
+BLACK_OPS_TYPE_IDS = [
+    22436,  # Widow (Caldari)
+    22428,  # Redeemer (Amarr)
+    22440,  # Panther (Minmatar)
+    22430,  # Sin (Gallente)
+]
+
+# Marauder Battleship type IDs
+MARAUDER_TYPE_IDS = [
+    28665,  # Vargur (Minmatar)
+    28710,  # Golem (Caldari)
+    28659,  # Paladin (Amarr)
+    28661,  # Kronos (Gallente)
+]
+
+# Combined list of all battleship type IDs
+ALL_BATTLESHIP_TYPE_IDS = T1_BATTLESHIP_TYPE_IDS + BLACK_OPS_TYPE_IDS + MARAUDER_TYPE_IDS
+
 # Maximum number of jumps from reference system to consider
 MAX_JUMPS = 8
 

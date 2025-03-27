@@ -2,14 +2,13 @@
 Market scanner for finding good deals on T1 battleship hulls.
 """
 import logging
-from typing import Dict, List, Tuple
+from typing import Dict, List
 from collections import defaultdict
 
 from esi_client import ESIClient
 from solar_system_data import get_regions_to_search
 import config
 
-# Set up logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -20,62 +19,27 @@ class MarketScanner:
     """Scanner for finding good deals on T1 battleship hulls."""
     
     def __init__(self, reference_system_id=None, reference_system_name=None):
-        """
-        Initialize the market scanner.
-        
-        Args:
-            reference_system_id: Optional system ID to use as reference (defaults to config.REFERENCE_SYSTEM_ID)
-            reference_system_name: Optional system name to use as reference (defaults to config.REFERENCE_SYSTEM_NAME)
-        """
         self.esi_client = ESIClient()
-        self.type_names = {}  # Cache for type names
-        self.system_names = {}  # Cache for system names
-        self.system_distances = {}  # Cache for system distances
+        self.type_names = {}
+        self.system_names = {}
+        self.system_distances = {}
         
-        # Set reference system
         self.reference_system_id = reference_system_id or config.REFERENCE_SYSTEM_ID
         self.reference_system_name = reference_system_name or config.REFERENCE_SYSTEM_NAME
     
     def get_type_name(self, type_id: int) -> str:
-        """
-        Get the name of a type.
-        
-        Args:
-            type_id: The type ID to get the name for
-            
-        Returns:
-            The name of the type
-        """
         if type_id not in self.type_names:
             type_info = self.esi_client.get_type_info(type_id)
             self.type_names[type_id] = type_info.get('name', f'Unknown Type {type_id}')
         return self.type_names[type_id]
     
     def get_system_name(self, system_id: int) -> str:
-        """
-        Get the name of a system.
-        
-        Args:
-            system_id: The system ID to get the name for
-            
-        Returns:
-            The name of the system
-        """
         if system_id not in self.system_names:
             system_info = self.esi_client.get_system_info(system_id)
             self.system_names[system_id] = system_info.get('name', f'Unknown System {system_id}')
         return self.system_names[system_id]
     
     def get_distance_to_reference(self, system_id: int) -> int:
-        """
-        Get the distance from a system to the reference system.
-        
-        Args:
-            system_id: The system ID to get the distance for
-            
-        Returns:
-            The number of jumps from the system to the reference system
-        """
         if system_id == self.reference_system_id:
             return 0
         
@@ -87,27 +51,17 @@ class MarketScanner:
         return self.system_distances[cache_key]
     
     def fetch_battleship_orders(self) -> Dict[int, List[Dict]]:
-        """
-        Fetch all sell orders for T1 battleship hulls in the regions around the reference system.
+        logger.info(f"Fetching battleship sell orders from regions around {self.reference_system_name}...")
         
-        Returns:
-            A dictionary mapping type IDs to lists of sell orders
-        """
-        logger.info(f"Fetching T1 battleship sell orders from regions around {self.reference_system_name}...")
-        
-        # Dictionary to store orders by type ID
         orders_by_type = defaultdict(list)
         
-        # Get the list of regions to search using the solar system data
         search_region_ids = get_regions_to_search(config.SOLAR_SYSTEM_DATA_PATH, self.reference_system_id)
         logger.info(f"Discovered {len(search_region_ids)} regions to search: {search_region_ids}")
         
-        # Fetch orders for each battleship type
-        for type_id in config.T1_BATTLESHIP_TYPE_IDS:
+        for type_id in config.ALL_BATTLESHIP_TYPE_IDS:
             type_name = self.get_type_name(type_id)
             logger.info(f"Fetching orders for {type_name} (Type ID: {type_id})")
             
-            # Get sell orders for this type in all search regions
             all_orders = []
             for region_id in search_region_ids:
                 logger.info(f"Searching region ID: {region_id}")
@@ -118,20 +72,17 @@ class MarketScanner:
                 )
                 all_orders.extend(orders)
             
-            # Filter orders by minimum price
             filtered_orders = [
                 order for order in all_orders
                 if order.get('price', 0) >= config.MIN_PRICE
             ]
             
-            # Add system names and distances to orders
             for order in filtered_orders:
                 system_id = order.get('system_id')
                 if system_id:
                     order['system_name'] = self.get_system_name(system_id)
                     order['distance_to_reference'] = self.get_distance_to_reference(system_id)
             
-            # Filter orders by distance to reference system
             nearby_orders = [
                 order for order in filtered_orders
                 if order.get('distance_to_reference', 999) <= config.MAX_JUMPS
@@ -146,37 +97,26 @@ class MarketScanner:
         return orders_by_type
     
     def fetch_jita_prices(self) -> Dict[int, float]:
-        """
-        Fetch the lowest sell prices for T1 battleship hulls in Jita.
+        logger.info("Fetching battleship sell prices from Jita...")
         
-        Returns:
-            A dictionary mapping type IDs to lowest sell prices
-        """
-        logger.info("Fetching T1 battleship sell prices from Jita...")
-        
-        # Dictionary to store lowest prices by type ID
         lowest_prices = {}
         
-        # Fetch orders for each battleship type
-        for type_id in config.T1_BATTLESHIP_TYPE_IDS:
+        for type_id in config.ALL_BATTLESHIP_TYPE_IDS:
             type_name = self.get_type_name(type_id)
             logger.info(f"Fetching Jita prices for {type_name} (Type ID: {type_id})")
             
-            # Get sell orders for this type in The Forge (Jita's region)
             orders = self.esi_client.get_market_orders(
                 region_id=config.FORGE_REGION_ID,
                 type_id=type_id,
                 order_type='sell'
             )
             
-            # Filter orders to only include those in Jita
             jita_orders = [
                 order for order in orders
                 if order.get('system_id') == config.JITA_SYSTEM_ID
             ]
             
             if jita_orders:
-                # Find the lowest price
                 lowest_price = min(order.get('price', float('inf')) for order in jita_orders)
                 lowest_prices[type_id] = lowest_price
                 logger.info(f"Lowest Jita price for {type_name}: {lowest_price:,.2f} ISK")
@@ -186,27 +126,13 @@ class MarketScanner:
         return lowest_prices
     
     def find_good_deals(self) -> List[Dict]:
-        """
-        Find good deals on T1 battleship hulls near the reference system.
+        logger.info(f"Finding good deals on battleship hulls near {self.reference_system_name}...")
         
-        A good deal is defined as:
-        1. Within MAX_JUMPS jumps of the reference system
-        2. Price is at or below the lowest Jita price
-        3. Price is above MIN_PRICE
-        
-        Returns:
-            A list of good deals
-        """
-        logger.info(f"Finding good deals on T1 battleship hulls near {self.reference_system_name}...")
-        
-        # Fetch all relevant orders
         battleship_orders = self.fetch_battleship_orders()
         jita_prices = self.fetch_jita_prices()
         
-        # List to store good deals
         good_deals = []
         
-        # Check each order against our criteria
         for type_id, orders in battleship_orders.items():
             type_name = self.get_type_name(type_id)
             jita_price = jita_prices.get(type_id, float('inf'))
@@ -216,7 +142,6 @@ class MarketScanner:
                 system_name = order.get('system_name', 'Unknown')
                 distance = order.get('distance_to_reference', 999)
                 
-                # Check if this is a good deal
                 if price <= jita_price:
                     good_deal = {
                         'type_id': type_id,
@@ -240,7 +165,6 @@ class MarketScanner:
                         f"{good_deal['savings_percent']:.2f}%)"
                     )
         
-        # Sort deals by savings percentage (best deals first)
         good_deals.sort(key=lambda deal: deal['savings_percent'], reverse=True)
         
         return good_deals
