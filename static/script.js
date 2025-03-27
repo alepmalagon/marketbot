@@ -34,41 +34,28 @@ document.addEventListener('DOMContentLoaded', function() {
             // Hide loading spinner
             hullsLoading.style.display = 'none';
             
-            // Group battleships by category
-            const battleshipsByCategory = {};
+            // Create a container for all hulls
+            const hullsGrid = document.createElement('div');
+            hullsGrid.className = 'hulls-grid';
+            
+            // Create checkboxes for each battleship hull
             battleships.forEach(battleship => {
-                if (!battleshipsByCategory[battleship.category]) {
-                    battleshipsByCategory[battleship.category] = [];
-                }
-                battleshipsByCategory[battleship.category].push(battleship);
+                const label = document.createElement('label');
+                label.className = 'hull-checkbox';
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.value = battleship.id;
+                checkbox.checked = true; // Default to checked
+                checkbox.dataset.name = battleship.name;
+                
+                label.appendChild(checkbox);
+                label.appendChild(document.createTextNode(battleship.name));
+                
+                hullsGrid.appendChild(label);
             });
             
-            // Create a container for each category
-            for (const [category, ships] of Object.entries(battleshipsByCategory)) {
-                // Create category header
-                const categoryHeader = document.createElement('h3');
-                categoryHeader.textContent = category;
-                categoryHeader.className = 'category-header';
-                hullsContainer.appendChild(categoryHeader);
-                
-                // Create checkboxes for each battleship hull in this category
-                ships.forEach(battleship => {
-                    const label = document.createElement('label');
-                    label.className = 'hull-checkbox';
-                    
-                    const checkbox = document.createElement('input');
-                    checkbox.type = 'checkbox';
-                    checkbox.value = battleship.id;
-                    checkbox.checked = true; // Default to checked
-                    checkbox.dataset.name = battleship.name;
-                    checkbox.dataset.category = battleship.category;
-                    
-                    label.appendChild(checkbox);
-                    label.appendChild(document.createTextNode(battleship.name));
-                    
-                    hullsContainer.appendChild(label);
-                });
-            }
+            hullsContainer.appendChild(hullsGrid);
             
             // Add "Select All" and "Deselect All" buttons
             const buttonContainer = document.createElement('div');
