@@ -10,7 +10,6 @@ import sys
 import logging
 import argparse
 import requests
-import gzip
 import bz2
 import pandas as pd
 from datetime import datetime, timedelta
@@ -33,92 +32,12 @@ class EVERefMarketDataDownloader:
         Args:
             data_dir: Directory to store downloaded market data
         """
-        self.market_orders_base_url = "https://data.everef.net/market-orders"
-        self.market_history_base_url = "https://data.everef.net/market-history"
+        self.market_orders_url = "https://data.everef.net/market-orders/market-orders-latest.v3.csv.bz2"
         self.data_dir = data_dir
         
         # Create data directory if it doesn't exist
         os.makedirs(data_dir, exist_ok=True)
         os.makedirs(os.path.join(data_dir, "market_orders"), exist_ok=True)
-        os.makedirs(os.path.join(data_dir, "market_history"), exist_ok=True)
-    
-    def _get_latest_market_orders_url(self) -> Optional[str]:
-        """
-        Get the URL of the latest market order snapshot.
-        
-        Returns:
-            URL of the latest snapshot, or None if not found
-        """
-        try:
-            # Get the directory listing
-            response = requests.get(self.market_orders_base_url)
-            response.raise_for_status()
-            
-            # Parse the HTML to find the latest snapshot
-            lines = response.text.split('\n')
-            snapshots = []
-            
-            for line in lines:
-                if 'href="' in line and '.csv.gz"' in line:
-                    # Extract the snapshot filename
-                    start = line.find('href="') + 6
-                    end = line.find('"', start)
-                    filename = line[start:end]
-                    
-                    if filename.endswith('.csv.gz'):
-                        snapshots.append(filename)
-            
-            if snapshots:
-                # Sort snapshots by name (which should be by date)
-                snapshots.sort(reverse=True)
-                return f"{self.market_orders_base_url}/{snapshots[0]}"
-            
-            return None
-        
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Error getting latest market orders snapshot URL: {e}")
-            return None
-    
-    def _get_latest_market_history_url(self) -> Optional[str]:
-        """
-        Get the URL of the latest market history snapshot.
-        
-        Returns:
-            URL of the latest snapshot, or None if not found
-        """
-        try:
-            # Get the current year
-            current_year = datetime.now().year
-            
-            # Get the directory listing for the current year
-            year_url = f"{self.market_history_base_url}/{current_year}"
-            response = requests.get(year_url)
-            response.raise_for_status()
-            
-            # Parse the HTML to find the latest snapshot
-            lines = response.text.split('\n')
-            snapshots = []
-            
-            for line in lines:
-                if 'href="' in line and '.csv.bz2"' in line:
-                    # Extract the snapshot filename
-                    start = line.find('href="') + 6
-                    end = line.find('"', start)
-                    filename = line[start:end]
-                    
-                    if filename.endswith('.csv.bz2'):
-                        snapshots.append(filename)
-            
-            if snapshots:
-                # Sort snapshots by name (which should be by date)
-                snapshots.sort(reverse=True)
-                return f"{year_url}/{snapshots[0]}"
-            
-            return None
-        
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Error getting latest market history snapshot URL: {e}")
-            return None
     
     def download_market_orders(self) -> Optional[str]:
         """
@@ -127,26 +46,24 @@ class EVERefMarketDataDownloader:
         Returns:
             Path to the downloaded file, or None if download failed
         """
-        # Get the latest snapshot URL
-        url = self._get_latest_market_orders_url()
-        if not url:
-            logger.error("Failed to get latest market orders snapshot URL")
-            return None
-        
         try:
-            logger.info(f"Downloading market orders snapshot from {url}")
+            logger.info(f"Downloading market orders snapshot from {self.market_orders_url}")
             
             # Extract filename from URL
-            filename = url.split('/')[-1]
+            filename = "market-orders-latest.v3.csv.bz2"
             file_path = os.path.join(self.data_dir, "market_orders", filename)
             
-            # Check if we already have this snapshot
+            # Check if we already have this snapshot and it's less than 1 hour old
             if os.path.exists(file_path):
-                logger.info(f"Using cached market orders snapshot: {file_path}")
-                return file_path
+                file_age = datetime.now() - datetime.fromtimestamp(os.path.getmtime(file_path))
+                if file_age < timedelta(hours=1):
+                    logger.info(f"Using cached market orders snapshot: {file_path} (age: {file_age})")
+                    return file_path
+                else:
+                    logger.info(f"Cached snapshot is {file_age} old, downloading fresh data")
             
             # Download the snapshot
-            response = requests.get(url, stream=True)
+            response = requests.get(self.market_orders_url, stream=True)
             response.raise_for_status()
             
             # Save the snapshot to the data directory
@@ -159,47 +76,6 @@ class EVERefMarketDataDownloader:
         
         except requests.exceptions.RequestException as e:
             logger.error(f"Error downloading market orders snapshot: {e}")
-            return None
-    
-    def download_market_history(self) -> Optional[str]:
-        """
-        Download the latest market history snapshot.
-        
-        Returns:
-            Path to the downloaded file, or None if download failed
-        """
-        # Get the latest snapshot URL
-        url = self._get_latest_market_history_url()
-        if not url:
-            logger.error("Failed to get latest market history snapshot URL")
-            return None
-        
-        try:
-            logger.info(f"Downloading market history snapshot from {url}")
-            
-            # Extract filename from URL
-            filename = url.split('/')[-1]
-            file_path = os.path.join(self.data_dir, "market_history", filename)
-            
-            # Check if we already have this snapshot
-            if os.path.exists(file_path):
-                logger.info(f"Using cached market history snapshot: {file_path}")
-                return file_path
-            
-            # Download the snapshot
-            response = requests.get(url, stream=True)
-            response.raise_for_status()
-            
-            # Save the snapshot to the data directory
-            with open(file_path, 'wb') as f:
-                for chunk in response.iter_content(chunk_size=8192):
-                    f.write(chunk)
-            
-            logger.info(f"Downloaded market history snapshot to {file_path}")
-            return file_path
-        
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Error downloading market history snapshot: {e}")
             return None
     
     def process_market_orders(self, file_path: str) -> Optional[str]:
@@ -216,22 +92,28 @@ class EVERefMarketDataDownloader:
             logger.info(f"Processing market orders snapshot from {file_path}")
             
             # Extract the base filename without extension
-            base_filename = os.path.basename(file_path).replace('.csv.gz', '')
+            base_filename = os.path.basename(file_path).replace('.csv.bz2', '')
             processed_file_path = os.path.join(self.data_dir, "market_orders", f"{base_filename}_processed.csv")
             
-            # Check if we already have the processed file
+            # Check if we already have the processed file and it's not older than the source file
             if os.path.exists(processed_file_path):
-                logger.info(f"Using cached processed market orders: {processed_file_path}")
-                return processed_file_path
+                source_mtime = os.path.getmtime(file_path)
+                processed_mtime = os.path.getmtime(processed_file_path)
+                
+                if processed_mtime >= source_mtime:
+                    logger.info(f"Using cached processed market orders: {processed_file_path}")
+                    return processed_file_path
             
-            # Open the gzipped CSV file
-            with gzip.open(file_path, 'rt') as f:
+            # Open the bz2 compressed CSV file
+            with bz2.open(file_path, 'rt') as f:
                 # Read the CSV into a pandas DataFrame
+                logger.info("Reading bz2 compressed CSV file (this may take a moment)...")
                 df = pd.read_csv(f)
             
             logger.info(f"Loaded {len(df)} market orders from snapshot")
             
             # Save the processed DataFrame to a CSV file
+            logger.info(f"Saving processed data to {processed_file_path}...")
             df.to_csv(processed_file_path, index=False)
             
             logger.info(f"Saved processed market orders to {processed_file_path}")
@@ -239,45 +121,6 @@ class EVERefMarketDataDownloader:
         
         except Exception as e:
             logger.error(f"Error processing market orders snapshot: {e}")
-            return None
-    
-    def process_market_history(self, file_path: str) -> Optional[str]:
-        """
-        Process a market history snapshot and save it as a CSV file.
-        
-        Args:
-            file_path: Path to the downloaded snapshot file
-            
-        Returns:
-            Path to the processed CSV file, or None if processing failed
-        """
-        try:
-            logger.info(f"Processing market history snapshot from {file_path}")
-            
-            # Extract the base filename without extension
-            base_filename = os.path.basename(file_path).replace('.csv.bz2', '')
-            processed_file_path = os.path.join(self.data_dir, "market_history", f"{base_filename}_processed.csv")
-            
-            # Check if we already have the processed file
-            if os.path.exists(processed_file_path):
-                logger.info(f"Using cached processed market history: {processed_file_path}")
-                return processed_file_path
-            
-            # Open the bz2 compressed CSV file
-            with bz2.open(file_path, 'rt') as f:
-                # Read the CSV into a pandas DataFrame
-                df = pd.read_csv(f)
-            
-            logger.info(f"Loaded {len(df)} market history records from snapshot")
-            
-            # Save the processed DataFrame to a CSV file
-            df.to_csv(processed_file_path, index=False)
-            
-            logger.info(f"Saved processed market history to {processed_file_path}")
-            return processed_file_path
-        
-        except Exception as e:
-            logger.error(f"Error processing market history snapshot: {e}")
             return None
 
 def main():
@@ -292,18 +135,6 @@ def main():
         help="Directory to store downloaded market data (default: everef_data)"
     )
     
-    parser.add_argument(
-        "--orders-only",
-        action="store_true",
-        help="Download only market orders data (not history)"
-    )
-    
-    parser.add_argument(
-        "--history-only",
-        action="store_true",
-        help="Download only market history data (not orders)"
-    )
-    
     # Parse arguments
     args = parser.parse_args()
     
@@ -311,30 +142,16 @@ def main():
     downloader = EVERefMarketDataDownloader(data_dir=args.data_dir)
     
     # Download and process market orders
-    if not args.history_only:
-        logger.info("Downloading and processing market orders data...")
-        orders_file = downloader.download_market_orders()
-        if orders_file:
-            processed_orders_file = downloader.process_market_orders(orders_file)
-            if processed_orders_file:
-                logger.info(f"Market orders data ready at: {processed_orders_file}")
-            else:
-                logger.error("Failed to process market orders data")
+    logger.info("Downloading and processing market orders data...")
+    orders_file = downloader.download_market_orders()
+    if orders_file:
+        processed_orders_file = downloader.process_market_orders(orders_file)
+        if processed_orders_file:
+            logger.info(f"Market orders data ready at: {processed_orders_file}")
         else:
-            logger.error("Failed to download market orders data")
-    
-    # Download and process market history
-    if not args.orders_only:
-        logger.info("Downloading and processing market history data...")
-        history_file = downloader.download_market_history()
-        if history_file:
-            processed_history_file = downloader.process_market_history(history_file)
-            if processed_history_file:
-                logger.info(f"Market history data ready at: {processed_history_file}")
-            else:
-                logger.error("Failed to process market history data")
-        else:
-            logger.error("Failed to download market history data")
+            logger.error("Failed to process market orders data")
+    else:
+        logger.error("Failed to download market orders data")
     
     logger.info("EVERef Market Data Downloader completed")
 

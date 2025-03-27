@@ -1,9 +1,10 @@
 """
 Enhanced market scanner for finding good deals on EVE Online ship hulls.
 
-This version uses the EVERef market data snapshots for faster market data retrieval.
+This version uses locally downloaded EVERef market data snapshots for faster market data retrieval.
 """
 import logging
+import os
 from typing import Dict, List
 from collections import defaultdict
 
@@ -91,89 +92,102 @@ class EnhancedMarketScanner:
         orders_by_type = defaultdict(list)
         
         if self.use_everef and self.everef_client:
-            # Use EVERef market data (faster)
-            logger.info("Using EVERef market data for faster retrieval")
+            # Check if the EVERef data directory exists
+            data_dir = self.everef_client.data_dir
+            market_orders_dir = self.everef_client.market_orders_dir
             
-            # Get all orders for all types at once
-            all_orders_by_type = self.everef_client.get_market_orders_for_multiple_types(
-                region_ids=search_region_ids,
-                type_ids=type_ids,
-                order_type='sell'
-            )
-            
-            # Process each type's orders
-            for type_id in type_ids:
-                type_name = self.get_type_name(type_id)
-                logger.info(f"Processing orders for {type_name} (Type ID: {type_id})")
+            if os.path.exists(market_orders_dir) and any(f.endswith('_processed.csv') or f.endswith('.csv.bz2') for f in os.listdir(market_orders_dir)):
+                # Use EVERef market data (faster)
+                logger.info("Using EVERef market data for faster retrieval")
                 
-                # Get orders for this type
-                orders = all_orders_by_type.get(type_id, [])
+                # Get all orders for all types at once
+                all_orders_by_type = self.everef_client.get_market_orders_for_multiple_types(
+                    region_ids=search_region_ids,
+                    type_ids=type_ids,
+                    order_type='sell'
+                )
                 
-                # Filter by minimum price
-                filtered_orders = [
-                    order for order in orders
-                    if order.get('price', 0) >= config.MIN_PRICE
-                ]
-                
-                # Add system names and distances
-                for order in filtered_orders:
-                    system_id = order.get('system_id')
-                    if system_id:
-                        order['system_name'] = self.get_system_name(system_id)
-                        order['distance_to_reference'] = self.get_distance_to_reference(system_id)
-                
-                # Filter by distance
-                nearby_orders = [
-                    order for order in filtered_orders
-                    if order.get('distance_to_reference', 999) <= config.MAX_JUMPS
-                ]
-                
-                if nearby_orders:
-                    logger.info(f"Found {len(nearby_orders)} nearby sell orders for {type_name}")
-                    orders_by_type[type_id].extend(nearby_orders)
-                else:
-                    logger.info(f"No nearby sell orders found for {type_name}")
+                # Process each type's orders
+                for type_id in type_ids:
+                    type_name = self.get_type_name(type_id)
+                    logger.info(f"Processing orders for {type_name} (Type ID: {type_id})")
+                    
+                    # Get orders for this type
+                    orders = all_orders_by_type.get(type_id, [])
+                    
+                    # Filter by minimum price
+                    filtered_orders = [
+                        order for order in orders
+                        if order.get('price', 0) >= config.MIN_PRICE
+                    ]
+                    
+                    # Add system names and distances
+                    for order in filtered_orders:
+                        system_id = order.get('system_id')
+                        if system_id:
+                            order['system_name'] = self.get_system_name(system_id)
+                            order['distance_to_reference'] = self.get_distance_to_reference(system_id)
+                    
+                    # Filter by distance
+                    nearby_orders = [
+                        order for order in filtered_orders
+                        if order.get('distance_to_reference', 999) <= config.MAX_JUMPS
+                    ]
+                    
+                    if nearby_orders:
+                        logger.info(f"Found {len(nearby_orders)} nearby sell orders for {type_name}")
+                        orders_by_type[type_id].extend(nearby_orders)
+                    else:
+                        logger.info(f"No nearby sell orders found for {type_name}")
+            else:
+                # EVERef data not available, fall back to ESI API
+                logger.warning("EVERef market data not available. Please run everef_market_data_downloader.py to download market data.")
+                logger.info("Falling back to ESI API for market data retrieval")
+                self._fetch_orders_using_esi(search_region_ids, type_ids, orders_by_type)
         else:
             # Use ESI API (slower)
             logger.info("Using ESI API for market data retrieval")
-            
-            for type_id in type_ids:
-                type_name = self.get_type_name(type_id)
-                logger.info(f"Fetching orders for {type_name} (Type ID: {type_id})")
-                
-                all_orders = []
-                for region_id in search_region_ids:
-                    logger.debug(f"Searching region ID: {region_id}")
-                    orders = self.esi_client.get_market_orders(
-                        region_id=region_id,
-                        type_id=type_id,
-                        order_type='sell'
-                    )
-                    all_orders.extend(orders)
-                
-                filtered_orders = [
-                    order for order in all_orders
-                    if order.get('price', 0) >= config.MIN_PRICE
-                ]
-                
-                for order in filtered_orders:
-                    system_id = order.get('system_id')
-                    if system_id:
-                        order['system_name'] = self.get_system_name(system_id)
-                        order['distance_to_reference'] = self.get_distance_to_reference(system_id)
-                
-                nearby_orders = [
-                    order for order in filtered_orders
-                    if order.get('distance_to_reference', 999) <= config.MAX_JUMPS
-                ]
-                
-                if nearby_orders:
-                    logger.info(f"Found {len(nearby_orders)} nearby sell orders for {type_name}")
-                    orders_by_type[type_id].extend(nearby_orders)
-                else:
-                    logger.info(f"No nearby sell orders found for {type_name}")
+            self._fetch_orders_using_esi(search_region_ids, type_ids, orders_by_type)
         
         return orders_by_type
+    
+    def _fetch_orders_using_esi(self, search_region_ids, type_ids, orders_by_type):
+        """Fetch orders using the ESI API."""
+        for type_id in type_ids:
+            type_name = self.get_type_name(type_id)
+            logger.info(f"Fetching orders for {type_name} (Type ID: {type_id})")
+            
+            all_orders = []
+            for region_id in search_region_ids:
+                logger.debug(f"Searching region ID: {region_id}")
+                orders = self.esi_client.get_market_orders(
+                    region_id=region_id,
+                    type_id=type_id,
+                    order_type='sell'
+                )
+                all_orders.extend(orders)
+            
+            filtered_orders = [
+                order for order in all_orders
+                if order.get('price', 0) >= config.MIN_PRICE
+            ]
+            
+            for order in filtered_orders:
+                system_id = order.get('system_id')
+                if system_id:
+                    order['system_name'] = self.get_system_name(system_id)
+                    order['distance_to_reference'] = self.get_distance_to_reference(system_id)
+            
+            nearby_orders = [
+                order for order in filtered_orders
+                if order.get('distance_to_reference', 999) <= config.MAX_JUMPS
+            ]
+            
+            if nearby_orders:
+                logger.info(f"Found {len(nearby_orders)} nearby sell orders for {type_name}")
+                orders_by_type[type_id].extend(nearby_orders)
+            else:
+                logger.info(f"No nearby sell orders found for {type_name}")
     
     def fetch_jita_prices(self, ship_type='battleship') -> Dict[int, float]:
         """
@@ -195,59 +209,71 @@ class EnhancedMarketScanner:
             type_ids = config.ALL_BATTLESHIP_TYPE_IDS
         
         if self.use_everef and self.everef_client:
-            # Use EVERef market data (faster)
-            logger.info("Using EVERef market data for faster Jita price retrieval")
+            # Check if the EVERef data directory exists
+            market_orders_dir = self.everef_client.market_orders_dir
             
-            # Get all orders for all types at once from The Forge region
-            all_orders = self.everef_client.get_market_orders(
-                region_ids=[config.FORGE_REGION_ID],
-                type_ids=type_ids,
-                order_type='sell'
-            )
-            
-            # Filter for Jita orders and find lowest prices
-            for type_id in type_ids:
-                type_name = self.get_type_name(type_id)
+            if os.path.exists(market_orders_dir) and any(f.endswith('_processed.csv') or f.endswith('.csv.bz2') for f in os.listdir(market_orders_dir)):
+                # Use EVERef market data (faster)
+                logger.info("Using EVERef market data for faster Jita price retrieval")
                 
-                # Filter orders for this type in Jita
-                jita_orders = [
-                    order for order in all_orders
-                    if order.get('type_id') == type_id and order.get('system_id') == config.JITA_SYSTEM_ID
-                ]
-                
-                if jita_orders:
-                    lowest_price = min(order.get('price', float('inf')) for order in jita_orders)
-                    lowest_prices[type_id] = lowest_price
-                    logger.info(f"Lowest Jita price for {type_name}: {lowest_price:,.2f} ISK")
-                else:
-                    logger.info(f"No Jita sell orders found for {type_name}")
-        else:
-            # Use ESI API (slower)
-            logger.info("Using ESI API for Jita price retrieval")
-            
-            for type_id in type_ids:
-                type_name = self.get_type_name(type_id)
-                logger.info(f"Fetching Jita prices for {type_name} (Type ID: {type_id})")
-                
-                orders = self.esi_client.get_market_orders(
-                    region_id=config.FORGE_REGION_ID,
-                    type_id=type_id,
+                # Get all orders for all types at once from The Forge region
+                all_orders = self.everef_client.get_market_orders(
+                    region_ids=[config.FORGE_REGION_ID],
+                    type_ids=type_ids,
                     order_type='sell'
                 )
                 
-                jita_orders = [
-                    order for order in orders
-                    if order.get('system_id') == config.JITA_SYSTEM_ID
-                ]
-                
-                if jita_orders:
-                    lowest_price = min(order.get('price', float('inf')) for order in jita_orders)
-                    lowest_prices[type_id] = lowest_price
-                    logger.info(f"Lowest Jita price for {type_name}: {lowest_price:,.2f} ISK")
-                else:
-                    logger.info(f"No Jita sell orders found for {type_name}")
+                # Filter for Jita orders and find lowest prices
+                for type_id in type_ids:
+                    type_name = self.get_type_name(type_id)
+                    
+                    # Filter orders for this type in Jita
+                    jita_orders = [
+                        order for order in all_orders
+                        if order.get('type_id') == type_id and order.get('system_id') == config.JITA_SYSTEM_ID
+                    ]
+                    
+                    if jita_orders:
+                        lowest_price = min(order.get('price', float('inf')) for order in jita_orders)
+                        lowest_prices[type_id] = lowest_price
+                        logger.info(f"Lowest Jita price for {type_name}: {lowest_price:,.2f} ISK")
+                    else:
+                        logger.info(f"No Jita sell orders found for {type_name}")
+            else:
+                # EVERef data not available, fall back to ESI API
+                logger.warning("EVERef market data not available. Please run everef_market_data_downloader.py to download market data.")
+                logger.info("Falling back to ESI API for Jita price retrieval")
+                self._fetch_jita_prices_using_esi(type_ids, lowest_prices)
+        else:
+            # Use ESI API (slower)
+            logger.info("Using ESI API for Jita price retrieval")
+            self._fetch_jita_prices_using_esi(type_ids, lowest_prices)
         
         return lowest_prices
+    
+    def _fetch_jita_prices_using_esi(self, type_ids, lowest_prices):
+        """Fetch Jita prices using the ESI API."""
+        for type_id in type_ids:
+            type_name = self.get_type_name(type_id)
+            logger.info(f"Fetching Jita prices for {type_name} (Type ID: {type_id})")
+            
+            orders = self.esi_client.get_market_orders(
+                region_id=config.FORGE_REGION_ID,
+                type_id=type_id,
+                order_type='sell'
+            )
+            
+            jita_orders = [
+                order for order in orders
+                if order.get('system_id') == config.JITA_SYSTEM_ID
+            ]
+            
+            if jita_orders:
+                lowest_price = min(order.get('price', float('inf')) for order in jita_orders)
+                lowest_prices[type_id] = lowest_price
+                logger.info(f"Lowest Jita price for {type_name}: {lowest_price:,.2f} ISK")
+            else:
+                logger.info(f"No Jita sell orders found for {type_name}")
     
     def find_good_deals(self, ship_type='battleship') -> List[Dict]:
         """Find good deals on ship hulls near the reference system."""

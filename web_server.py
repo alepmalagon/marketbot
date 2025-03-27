@@ -208,6 +208,7 @@ def run_scan():
         
         # Update the config with the selected hull IDs
         if ship_type == 'battleship':
+            config.T1_BATTLESHIP_TYPE_IDS = hull_ids
             config.ALL_BATTLESHIP_TYPE_IDS = hull_ids
             logger.info(f"Using custom battleship hull type IDs: {hull_ids}")
         elif ship_type == 'cruiser':
