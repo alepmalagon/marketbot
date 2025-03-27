@@ -19,7 +19,7 @@ import config
 from esi_client import ESIClient
 from solar_system_data import load_solar_systems
 from main import resolve_reference_system, parse_hull_ids
-from ship_hulls import get_all_battleships, get_all_cruisers, get_ship_info
+from ship_hulls import get_all_battleships, get_all_cruisers, get_all_command_ships, get_ship_info
 
 # Set up logging
 logging.basicConfig(
@@ -55,10 +55,17 @@ def get_battleships():
 
 @app.route('/api/cruisers', methods=['GET'])
 def get_cruisers():
-    """Get the list of all cruiser hulls."""
+    """Get the list of all advanced cruiser hulls."""
     # Use the static data instead of making API calls
     cruisers = get_all_cruisers()
     return jsonify(cruisers)
+
+@app.route('/api/command_ships', methods=['GET'])
+def get_command_ships():
+    """Get the list of all command battlecruiser hulls."""
+    # Use the static data instead of making API calls
+    command_ships = get_all_command_ships()
+    return jsonify(command_ships)
 
 @app.route('/api/systems', methods=['GET'])
 def get_systems():
@@ -132,6 +139,9 @@ def run_scan():
         elif ship_type == 'cruiser':
             config.ALL_CRUISER_TYPE_IDS = hull_ids
             logger.info(f"Using custom cruiser hull type IDs: {hull_ids}")
+        elif ship_type == 'command_ship':
+            config.ALL_COMMAND_SHIP_TYPE_IDS = hull_ids
+            logger.info(f"Using custom command ship hull type IDs: {hull_ids}")
     
     logger.info(f"Starting market scan for {config.REFERENCE_SYSTEM_NAME}...")
     

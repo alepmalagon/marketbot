@@ -37,12 +37,28 @@ document.addEventListener('DOMContentLoaded', function() {
     shipTypeRadios.forEach(radio => {
         radio.addEventListener('change', function() {
             const shipType = this.value;
-            hullsLabel.textContent = shipType === 'battleship' ? 'Battleship Hulls' : 'Cruiser Hulls';
+            updateHullsLabel(shipType);
             loadShipHulls(shipType);
         });
     });
 
     // Functions
+    function updateHullsLabel(shipType) {
+        switch(shipType) {
+            case 'battleship':
+                hullsLabel.textContent = 'Battleship Hulls';
+                break;
+            case 'cruiser':
+                hullsLabel.textContent = 'Advanced Cruiser Hulls';
+                break;
+            case 'command_ship':
+                hullsLabel.textContent = 'Command Battlecruiser Hulls';
+                break;
+            default:
+                hullsLabel.textContent = 'Ship Hulls';
+        }
+    }
+    
     function initTheme() {
         // Check for saved theme preference or use default
         const savedTheme = localStorage.getItem('theme') || 'dark';
@@ -95,7 +111,21 @@ document.addEventListener('DOMContentLoaded', function() {
             hullsContainer.appendChild(loadingSpinner);
             
             // Fetch the appropriate ship type
-            const endpoint = shipType === 'battleship' ? '/api/battleships' : '/api/cruisers';
+            let endpoint;
+            switch(shipType) {
+                case 'battleship':
+                    endpoint = '/api/battleships';
+                    break;
+                case 'cruiser':
+                    endpoint = '/api/cruisers';
+                    break;
+                case 'command_ship':
+                    endpoint = '/api/command_ships';
+                    break;
+                default:
+                    endpoint = '/api/battleships';
+            }
+            
             const response = await fetch(endpoint);
             const ships = await response.json();
             
@@ -246,7 +276,24 @@ document.addEventListener('DOMContentLoaded', function() {
             // Update results info
             systemInfo.textContent = `Reference System: ${data.reference_system}`;
             jumpsInfo.textContent = `Max Jumps: ${data.max_jumps}`;
-            shipTypeInfo.textContent = `Ship Type: ${shipType.charAt(0).toUpperCase() + shipType.slice(1)}s`;
+            
+            // Format ship type display name
+            let shipTypeDisplay;
+            switch(shipType) {
+                case 'battleship':
+                    shipTypeDisplay = 'Battleships';
+                    break;
+                case 'cruiser':
+                    shipTypeDisplay = 'Advanced Cruisers';
+                    break;
+                case 'command_ship':
+                    shipTypeDisplay = 'Command Battlecruisers';
+                    break;
+                default:
+                    shipTypeDisplay = shipType.charAt(0).toUpperCase() + shipType.slice(1) + 's';
+            }
+            
+            shipTypeInfo.textContent = `Ship Type: ${shipTypeDisplay}`;
             
             // Display results
             if (data.deals && data.deals.length > 0) {

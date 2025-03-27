@@ -88,6 +88,8 @@ class EnhancedMarketScanner:
             type_ids = config.ALL_BATTLESHIP_TYPE_IDS
         elif ship_type == 'cruiser':
             type_ids = config.ALL_CRUISER_TYPE_IDS
+        elif ship_type == 'command_ship':
+            type_ids = config.ALL_COMMAND_SHIP_TYPE_IDS
         else:
             logger.warning(f"Unknown ship type: {ship_type}, defaulting to battleships")
             type_ids = config.ALL_BATTLESHIP_TYPE_IDS
@@ -211,6 +213,8 @@ class EnhancedMarketScanner:
             type_ids = config.ALL_BATTLESHIP_TYPE_IDS
         elif ship_type == 'cruiser':
             type_ids = config.ALL_CRUISER_TYPE_IDS
+        elif ship_type == 'command_ship':
+            type_ids = config.ALL_COMMAND_SHIP_TYPE_IDS
         else:
             logger.warning(f"Unknown ship type: {ship_type}, defaulting to battleships")
             type_ids = config.ALL_BATTLESHIP_TYPE_IDS

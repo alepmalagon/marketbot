@@ -166,8 +166,11 @@ RECON_SHIP_TYPE_IDS = [
 # Combined list of all battleship type IDs
 ALL_BATTLESHIP_TYPE_IDS = T1_BATTLESHIP_TYPE_IDS + BLACK_OPS_TYPE_IDS + MARAUDER_TYPE_IDS + FACTION_BATTLESHIP_TYPE_IDS + PIRATE_BATTLESHIP_TYPE_IDS
 
-# Combined list of all cruiser type IDs
-ALL_CRUISER_TYPE_IDS = COMMAND_SHIP_TYPE_IDS + STRATEGIC_CRUISER_TYPE_IDS + HAC_TYPE_IDS + RECON_SHIP_TYPE_IDS
+# Combined list of all advanced cruiser type IDs (excluding Command Ships)
+ALL_CRUISER_TYPE_IDS = STRATEGIC_CRUISER_TYPE_IDS + HAC_TYPE_IDS + RECON_SHIP_TYPE_IDS
+
+# Command Battlecruisers
+ALL_COMMAND_SHIP_TYPE_IDS = COMMAND_SHIP_TYPE_IDS
 
 # Maximum number of jumps from reference system to consider
 MAX_JUMPS = 8
