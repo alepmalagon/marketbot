@@ -39,3 +39,5 @@ deals_*.json
 
 # Logs
 *.log
+everef_data/market_orders/market-orders-latest.v3.csv.bz2
+everef_data/market_orders/market-orders-latest.v3_processed.csv
