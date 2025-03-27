@@ -9,7 +9,7 @@ from typing import Dict, List
 from collections import defaultdict
 
 from esi_client import ESIClient
-from everef_market_client import EVERefMarketClient
+from everef_market_client_fixed_v2 import EVERefMarketClient
 from solar_system_data import get_regions_to_search
 import config
 
