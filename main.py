@@ -133,7 +133,9 @@ def run_single_scan(reference_system=None, max_jumps=None, hull_ids=None):
     # If hull_ids is provided, update the config
     if hull_ids is not None:
         config.T1_BATTLESHIP_TYPE_IDS = hull_ids
-        logger.info(f"Using custom hull type IDs: {config.T1_BATTLESHIP_TYPE_IDS}")
+        # Also update the ALL_BATTLESHIP_TYPE_IDS to only include the selected hulls
+        config.ALL_BATTLESHIP_TYPE_IDS = hull_ids
+        logger.info(f"Using custom hull type IDs: {hull_ids}")
     
     logger.info(f"Starting EVE Online Market Bot (single scan mode) for {config.REFERENCE_SYSTEM_NAME}...")
     

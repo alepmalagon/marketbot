@@ -143,9 +143,11 @@ def run_scan():
                 'error': f"Invalid hull IDs format: {hull_ids_str}"
             }), 400
         
-        # Update the config
+        # Update the config with the selected hull IDs
         config.T1_BATTLESHIP_TYPE_IDS = hull_ids
-        logger.info(f"Using custom hull type IDs: {config.T1_BATTLESHIP_TYPE_IDS}")
+        # Also update the ALL_BATTLESHIP_TYPE_IDS to only include the selected hulls
+        config.ALL_BATTLESHIP_TYPE_IDS = hull_ids
+        logger.info(f"Using custom hull type IDs: {hull_ids}")
     
     logger.info(f"Starting market scan for {config.REFERENCE_SYSTEM_NAME}...")
     
