@@ -16,7 +16,7 @@ import platform
 import sys
 from datetime import datetime
 
-from market_scanner import MarketScanner
+from enhanced_market_scanner import EnhancedMarketScanner
 from service_manager import ServiceManager, run_as_daemon, run_in_foreground
 import config
 from esi_client import ESIClient
@@ -139,10 +139,11 @@ def run_single_scan(reference_system=None, max_jumps=None, hull_ids=None):
     
     logger.info(f"Starting EVE Online Market Bot (single scan mode) for {config.REFERENCE_SYSTEM_NAME}...")
     
-    # Create a market scanner with the reference system
-    scanner = MarketScanner(
+    # Create an enhanced market scanner with the reference system
+    scanner = EnhancedMarketScanner(
         reference_system_id=config.REFERENCE_SYSTEM_ID,
-        reference_system_name=config.REFERENCE_SYSTEM_NAME
+        reference_system_name=config.REFERENCE_SYSTEM_NAME,
+        use_everef=True  # Use EVERef market data for faster retrieval
     )
     
     # Find good deals

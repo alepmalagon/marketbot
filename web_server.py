@@ -14,7 +14,7 @@ from datetime import datetime
 from flask import Flask, request, jsonify, render_template, send_from_directory
 from flask_cors import CORS
 
-from market_scanner import MarketScanner
+from enhanced_market_scanner import EnhancedMarketScanner
 import config
 from esi_client import ESIClient
 from solar_system_data import load_solar_systems
@@ -216,10 +216,11 @@ def run_scan():
     
     logger.info(f"Starting market scan for {config.REFERENCE_SYSTEM_NAME}...")
     
-    # Create a market scanner with the reference system
-    scanner = MarketScanner(
+    # Create an enhanced market scanner with the reference system
+    scanner = EnhancedMarketScanner(
         reference_system_id=config.REFERENCE_SYSTEM_ID,
-        reference_system_name=config.REFERENCE_SYSTEM_NAME
+        reference_system_name=config.REFERENCE_SYSTEM_NAME,
+        use_everef=True  # Use EVERef market data for faster retrieval
     )
     
     # Find good deals
