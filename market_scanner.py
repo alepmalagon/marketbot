@@ -1,5 +1,5 @@
 """
-Market scanner for finding good deals on T1 battleship hulls.
+Market scanner for finding good deals on EVE Online ship hulls.
 """
 import logging
 from typing import Dict, List
@@ -16,7 +16,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 class MarketScanner:
-    """Scanner for finding good deals on T1 battleship hulls."""
+    """Scanner for finding good deals on ship hulls."""
     
     def __init__(self, reference_system_id=None, reference_system_name=None):
         self.esi_client = ESIClient()
@@ -50,21 +50,31 @@ class MarketScanner:
         
         return self.system_distances[cache_key]
     
-    def fetch_battleship_orders(self) -> Dict[int, List[Dict]]:
-        logger.info(f"Fetching battleship sell orders from regions around {self.reference_system_name}...")
+    def fetch_ship_orders(self, ship_type='battleship') -> Dict[int, List[Dict]]:
+        """Fetch market orders for the specified ship type."""
+        logger.info(f"Fetching {ship_type} sell orders from regions around {self.reference_system_name}...")
         
         orders_by_type = defaultdict(list)
         
         search_region_ids = get_regions_to_search(config.SOLAR_SYSTEM_DATA_PATH, self.reference_system_id)
         logger.info(f"Discovered {len(search_region_ids)} regions to search: {search_region_ids}")
         
-        for type_id in config.ALL_BATTLESHIP_TYPE_IDS:
+        # Determine which ship type IDs to use
+        if ship_type == 'battleship':
+            type_ids = config.ALL_BATTLESHIP_TYPE_IDS
+        elif ship_type == 'cruiser':
+            type_ids = config.ALL_CRUISER_TYPE_IDS
+        else:
+            logger.warning(f"Unknown ship type: {ship_type}, defaulting to battleships")
+            type_ids = config.ALL_BATTLESHIP_TYPE_IDS
+        
+        for type_id in type_ids:
             type_name = self.get_type_name(type_id)
             logger.info(f"Fetching orders for {type_name} (Type ID: {type_id})")
             
             all_orders = []
             for region_id in search_region_ids:
-                logger.info(f"Searching region ID: {region_id}")
+                logger.debug(f"Searching region ID: {region_id}")
                 orders = self.esi_client.get_market_orders(
                     region_id=region_id,
                     type_id=type_id,
@@ -96,12 +106,22 @@ class MarketScanner:
         
         return orders_by_type
     
-    def fetch_jita_prices(self) -> Dict[int, float]:
-        logger.info("Fetching battleship sell prices from Jita...")
+    def fetch_jita_prices(self, ship_type='battleship') -> Dict[int, float]:
+        """Fetch Jita prices for the specified ship type."""
+        logger.info(f"Fetching {ship_type} sell prices from Jita...")
         
         lowest_prices = {}
         
-        for type_id in config.ALL_BATTLESHIP_TYPE_IDS:
+        # Determine which ship type IDs to use
+        if ship_type == 'battleship':
+            type_ids = config.ALL_BATTLESHIP_TYPE_IDS
+        elif ship_type == 'cruiser':
+            type_ids = config.ALL_CRUISER_TYPE_IDS
+        else:
+            logger.warning(f"Unknown ship type: {ship_type}, defaulting to battleships")
+            type_ids = config.ALL_BATTLESHIP_TYPE_IDS
+        
+        for type_id in type_ids:
             type_name = self.get_type_name(type_id)
             logger.info(f"Fetching Jita prices for {type_name} (Type ID: {type_id})")
             
@@ -125,15 +145,16 @@ class MarketScanner:
         
         return lowest_prices
     
-    def find_good_deals(self) -> List[Dict]:
-        logger.info(f"Finding good deals on battleship hulls near {self.reference_system_name}...")
+    def find_good_deals(self, ship_type='battleship') -> List[Dict]:
+        """Find good deals on ship hulls near the reference system."""
+        logger.info(f"Finding good deals on {ship_type} hulls near {self.reference_system_name}...")
         
-        battleship_orders = self.fetch_battleship_orders()
-        jita_prices = self.fetch_jita_prices()
+        ship_orders = self.fetch_ship_orders(ship_type)
+        jita_prices = self.fetch_jita_prices(ship_type)
         
         good_deals = []
         
-        for type_id, orders in battleship_orders.items():
+        for type_id, orders in ship_orders.items():
             type_name = self.get_type_name(type_id)
             jita_price = jita_prices.get(type_id, float('inf'))
             

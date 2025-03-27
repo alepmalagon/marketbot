@@ -15,20 +15,32 @@ document.addEventListener('DOMContentLoaded', function() {
     const resultsBody = document.getElementById('results-body');
     const systemInfo = document.getElementById('system-info');
     const jumpsInfo = document.getElementById('jumps-info');
+    const shipTypeInfo = document.getElementById('ship-type-info');
     const themeToggle = document.getElementById('theme-toggle');
+    const hullsLabel = document.getElementById('hulls-label');
+    const shipTypeRadios = document.querySelectorAll('input[name="ship-type"]');
 
     // Theme Handling
     initTheme();
     themeToggle.addEventListener('change', switchTheme);
 
-    // Load battleship hulls
-    loadBattleships();
+    // Load battleship hulls by default
+    loadShipHulls('battleship');
     
     // Load solar systems for autocomplete
     loadSystems();
 
     // Event listeners
     scanButton.addEventListener('click', runScan);
+    
+    // Ship type selection event listeners
+    shipTypeRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            const shipType = this.value;
+            hullsLabel.textContent = shipType === 'battleship' ? 'Battleship Hulls' : 'Cruiser Hulls';
+            loadShipHulls(shipType);
+        });
+    });
 
     // Functions
     function initTheme() {
@@ -69,31 +81,44 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    async function loadBattleships() {
+    async function loadShipHulls(shipType = 'battleship') {
         try {
-            const response = await fetch('/api/battleships');
-            const battleships = await response.json();
+            // Clear existing hulls
+            while (hullsContainer.firstChild) {
+                hullsContainer.removeChild(hullsContainer.firstChild);
+            }
             
-            // Hide loading spinner
-            hullsLoading.style.display = 'none';
+            // Show loading spinner
+            const loadingSpinner = document.createElement('div');
+            loadingSpinner.className = 'loading-spinner';
+            loadingSpinner.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading hulls...';
+            hullsContainer.appendChild(loadingSpinner);
+            
+            // Fetch the appropriate ship type
+            const endpoint = shipType === 'battleship' ? '/api/battleships' : '/api/cruisers';
+            const response = await fetch(endpoint);
+            const ships = await response.json();
+            
+            // Remove loading spinner
+            hullsContainer.removeChild(loadingSpinner);
             
             // Create a container for all hulls
             const hullsGrid = document.createElement('div');
             hullsGrid.className = 'hulls-grid';
             
-            // Create checkboxes for each battleship hull
-            battleships.forEach(battleship => {
+            // Create checkboxes for each ship hull
+            ships.forEach(ship => {
                 const label = document.createElement('label');
                 label.className = 'hull-checkbox';
                 
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
-                checkbox.value = battleship.id;
+                checkbox.value = ship.id;
                 checkbox.checked = true; // Default to checked
-                checkbox.dataset.name = battleship.name;
+                checkbox.dataset.name = ship.name;
                 
                 label.appendChild(checkbox);
-                label.appendChild(document.createTextNode(battleship.name));
+                label.appendChild(document.createTextNode(ship.name));
                 
                 hullsGrid.appendChild(label);
             });
@@ -137,8 +162,8 @@ document.addEventListener('DOMContentLoaded', function() {
             hullsContainer.appendChild(buttonContainer);
             
         } catch (error) {
-            console.error('Error loading battleships:', error);
-            hullsLoading.textContent = 'Error loading battleships. Please refresh the page.';
+            console.error(`Error loading ${shipType} hulls:`, error);
+            hullsContainer.innerHTML = `<div class="loading-spinner">Error loading ${shipType} hulls. Please refresh the page.</div>`;
         }
     }
     
@@ -165,6 +190,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const selectedHulls = Array.from(document.querySelectorAll('.hull-checkbox input:checked'))
             .map(checkbox => checkbox.value);
         
+        // Get selected ship type
+        const shipType = document.querySelector('input[name="ship-type"]:checked').value;
+        
         // Validate inputs
         if (!systemInput.value) {
             alert('Please enter a reference system.');
@@ -173,7 +201,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         if (selectedHulls.length === 0) {
-            alert('Please select at least one battleship hull.');
+            alert(`Please select at least one ${shipType} hull.`);
             return;
         }
         
@@ -190,7 +218,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const requestData = {
                 system: systemInput.value,
                 jumps: parseInt(jumpsInput.value),
-                hulls: selectedHulls.join(',')
+                hulls: selectedHulls.join(','),
+                shipType: shipType
             };
             
             // Send request to API
@@ -217,6 +246,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Update results info
             systemInfo.textContent = `Reference System: ${data.reference_system}`;
             jumpsInfo.textContent = `Max Jumps: ${data.max_jumps}`;
+            shipTypeInfo.textContent = `Ship Type: ${shipType.charAt(0).toUpperCase() + shipType.slice(1)}s`;
             
             // Display results
             if (data.deals && data.deals.length > 0) {

@@ -78,7 +78,69 @@ def get_battleships():
             'category': 'Marauder'
         })
     
+    # Get Faction Battleships
+    for type_id in config.FACTION_BATTLESHIP_TYPE_IDS:
+        type_info = esi_client.get_type_info(type_id)
+        battleships.append({
+            'id': type_id,
+            'name': type_info.get('name', f'Unknown Type {type_id}'),
+            'category': 'Faction Battleship'
+        })
+    
+    # Get Pirate Faction Battleships
+    for type_id in config.PIRATE_BATTLESHIP_TYPE_IDS:
+        type_info = esi_client.get_type_info(type_id)
+        battleships.append({
+            'id': type_id,
+            'name': type_info.get('name', f'Unknown Type {type_id}'),
+            'category': 'Pirate Battleship'
+        })
+    
     return jsonify(battleships)
+
+@app.route('/api/cruisers', methods=['GET'])
+def get_cruisers():
+    """Get the list of all cruiser hulls."""
+    esi_client = ESIClient()
+    cruisers = []
+    
+    # Get Command Ships
+    for type_id in config.COMMAND_SHIP_TYPE_IDS:
+        type_info = esi_client.get_type_info(type_id)
+        cruisers.append({
+            'id': type_id,
+            'name': type_info.get('name', f'Unknown Type {type_id}'),
+            'category': 'Command Ship'
+        })
+    
+    # Get Strategic Cruisers
+    for type_id in config.STRATEGIC_CRUISER_TYPE_IDS:
+        type_info = esi_client.get_type_info(type_id)
+        cruisers.append({
+            'id': type_id,
+            'name': type_info.get('name', f'Unknown Type {type_id}'),
+            'category': 'Strategic Cruiser'
+        })
+    
+    # Get Heavy Assault Cruisers
+    for type_id in config.HAC_TYPE_IDS:
+        type_info = esi_client.get_type_info(type_id)
+        cruisers.append({
+            'id': type_id,
+            'name': type_info.get('name', f'Unknown Type {type_id}'),
+            'category': 'Heavy Assault Cruiser'
+        })
+    
+    # Get Recon Ships
+    for type_id in config.RECON_SHIP_TYPE_IDS:
+        type_info = esi_client.get_type_info(type_id)
+        cruisers.append({
+            'id': type_id,
+            'name': type_info.get('name', f'Unknown Type {type_id}'),
+            'category': 'Recon Ship'
+        })
+    
+    return jsonify(cruisers)
 
 @app.route('/api/systems', methods=['GET'])
 def get_systems():
@@ -111,6 +173,7 @@ def run_scan():
     system_input = data.get('system')
     max_jumps = data.get('jumps')
     hull_ids_str = data.get('hulls')
+    ship_type = data.get('shipType', 'battleship')  # Default to battleship
     
     # Resolve the reference system (could be ID or name)
     reference_system_id = resolve_reference_system(system_input)
@@ -144,10 +207,12 @@ def run_scan():
             }), 400
         
         # Update the config with the selected hull IDs
-        config.T1_BATTLESHIP_TYPE_IDS = hull_ids
-        # Also update the ALL_BATTLESHIP_TYPE_IDS to only include the selected hulls
-        config.ALL_BATTLESHIP_TYPE_IDS = hull_ids
-        logger.info(f"Using custom hull type IDs: {hull_ids}")
+        if ship_type == 'battleship':
+            config.ALL_BATTLESHIP_TYPE_IDS = hull_ids
+            logger.info(f"Using custom battleship hull type IDs: {hull_ids}")
+        elif ship_type == 'cruiser':
+            config.ALL_CRUISER_TYPE_IDS = hull_ids
+            logger.info(f"Using custom cruiser hull type IDs: {hull_ids}")
     
     logger.info(f"Starting market scan for {config.REFERENCE_SYSTEM_NAME}...")
     
@@ -158,7 +223,7 @@ def run_scan():
     )
     
     # Find good deals
-    good_deals = scanner.find_good_deals()
+    good_deals = scanner.find_good_deals(ship_type=ship_type)
     
     # Save the deals to a JSON file
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -173,7 +238,8 @@ def run_scan():
         'deals': good_deals,
         'reference_system': config.REFERENCE_SYSTEM_NAME,
         'max_jumps': config.MAX_JUMPS,
-        'hull_ids': config.T1_BATTLESHIP_TYPE_IDS
+        'hull_ids': hull_ids,
+        'ship_type': ship_type
     })
 
 def run_web_server(host='0.0.0.0', port=5000, debug=False):
