@@ -10,13 +10,13 @@ allowing users to:
 4. Run the market scanner and view the results
 
 Run this script directly to start the web server:
-    python web_app.py [--host HOST] [--port PORT] [--debug]
+    python web_app_fixed.py [--host HOST] [--port PORT] [--debug]
 """
 import argparse
 import logging
 import os
 import sys
-from web_server import run_web_server
+from web_server_fixed import run_web_server
 
 # Set up logging
 logging.basicConfig(

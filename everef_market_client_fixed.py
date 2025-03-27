@@ -1,15 +1,15 @@
 """
 EVERef Market Data client for fetching market orders from EVERef's market order snapshots.
 
-This module provides a client for downloading and processing market order data from
-EVERef's market order snapshots, which can significantly speed up market data retrieval
-compared to using the ESI API directly.
+This module provides a client for loading and processing market order data from
+locally downloaded EVERef market order snapshots, which can significantly speed up
+market data retrieval compared to using the ESI API directly.
 """
 import os
 import csv
 import logging
-import requests
 import gzip
+import bz2
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any, Set
 import pandas as pd
@@ -23,125 +23,81 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 class EVERefMarketClient:
-    """Client for fetching market data from EVERef's market order snapshots."""
+    """Client for fetching market data from locally downloaded EVERef market order snapshots."""
     
-    def __init__(self, cache_dir="everef_cache"):
+    def __init__(self, data_dir="everef_data"):
         """
         Initialize the EVERef Market client.
         
         Args:
-            cache_dir: Directory to store downloaded market data
+            data_dir: Directory where downloaded market data is stored
         """
-        self.base_url = "https://data.everef.net/market-orders"
-        self.cache_dir = cache_dir
-        
-        # Create cache directory if it doesn't exist
-        os.makedirs(cache_dir, exist_ok=True)
+        self.data_dir = data_dir
+        self.market_orders_dir = os.path.join(data_dir, "market_orders")
+        self.market_history_dir = os.path.join(data_dir, "market_history")
         
         # Cache for market orders by region and type
-        self.market_orders_cache = {}
+        self.market_orders_cache = None
         self.last_update_time = None
         self.cache_duration = timedelta(minutes=30)  # Cache duration in minutes
+        
+        # Check if data directories exist
+        if not os.path.exists(self.market_orders_dir):
+            logger.warning(f"Market orders directory not found: {self.market_orders_dir}")
+            logger.warning("Please run everef_market_data_downloader.py to download market data")
+        
+        if not os.path.exists(self.market_history_dir):
+            logger.warning(f"Market history directory not found: {self.market_history_dir}")
+            logger.warning("Please run everef_market_data_downloader.py to download market data")
     
-    def _get_latest_snapshot_url(self) -> Optional[str]:
+    def _get_latest_market_orders_file(self) -> Optional[str]:
         """
-        Get the URL of the latest market order snapshot.
+        Get the path to the latest processed market orders file.
         
         Returns:
-            URL of the latest snapshot, or None if not found
+            Path to the latest processed market orders file, or None if not found
         """
-        try:
-            # Get the directory listing
-            response = requests.get(self.base_url)
-            response.raise_for_status()
-            
-            # Parse the HTML to find the latest snapshot
-            # This is a simple approach - in production, you might want to use a proper HTML parser
-            lines = response.text.split('\n')
-            snapshots = []
-            
-            for line in lines:
-                if 'href="' in line and '.csv.gz"' in line:
-                    # Extract the snapshot filename
-                    start = line.find('href="') + 6
-                    end = line.find('"', start)
-                    filename = line[start:end]
-                    
-                    if filename.endswith('.csv.gz'):
-                        snapshots.append(filename)
-            
-            if snapshots:
-                # Sort snapshots by name (which should be by date)
-                snapshots.sort(reverse=True)
-                return f"{self.base_url}/{snapshots[0]}"
-            
+        if not os.path.exists(self.market_orders_dir):
+            logger.error(f"Market orders directory not found: {self.market_orders_dir}")
             return None
         
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Error getting latest snapshot URL: {e}")
+        # Get all processed market orders files
+        processed_files = [
+            os.path.join(self.market_orders_dir, f)
+            for f in os.listdir(self.market_orders_dir)
+            if f.endswith('_processed.csv')
+        ]
+        
+        if not processed_files:
+            logger.error("No processed market orders files found")
             return None
+        
+        # Sort by modification time (newest first)
+        processed_files.sort(key=lambda f: os.path.getmtime(f), reverse=True)
+        
+        return processed_files[0]
     
-    def _download_snapshot(self, url: str) -> Optional[str]:
+    def _load_market_orders_from_file(self, file_path: str) -> Optional[pd.DataFrame]:
         """
-        Download a market order snapshot and save it to the cache directory.
+        Load market orders from a processed CSV file.
         
         Args:
-            url: URL of the snapshot to download
-            
-        Returns:
-            Path to the downloaded file, or None if download failed
-        """
-        try:
-            logger.info(f"Downloading market order snapshot from {url}")
-            
-            # Extract filename from URL
-            filename = url.split('/')[-1]
-            cache_path = os.path.join(self.cache_dir, filename)
-            
-            # Check if we already have this snapshot
-            if os.path.exists(cache_path):
-                logger.info(f"Using cached snapshot: {cache_path}")
-                return cache_path
-            
-            # Download the snapshot
-            response = requests.get(url, stream=True)
-            response.raise_for_status()
-            
-            # Save the snapshot to the cache directory
-            with open(cache_path, 'wb') as f:
-                for chunk in response.iter_content(chunk_size=8192):
-                    f.write(chunk)
-            
-            logger.info(f"Downloaded snapshot to {cache_path}")
-            return cache_path
-        
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Error downloading snapshot: {e}")
-            return None
-    
-    def _load_snapshot_to_dataframe(self, file_path: str) -> Optional[pd.DataFrame]:
-        """
-        Load a market order snapshot into a pandas DataFrame.
-        
-        Args:
-            file_path: Path to the snapshot file
+            file_path: Path to the processed market orders file
             
         Returns:
             DataFrame containing the market orders, or None if loading failed
         """
         try:
-            logger.info(f"Loading market order snapshot from {file_path}")
+            logger.info(f"Loading market orders from {file_path}")
             
-            # Open the gzipped CSV file
-            with gzip.open(file_path, 'rt') as f:
-                # Read the CSV into a pandas DataFrame
-                df = pd.read_csv(f)
+            # Read the CSV into a pandas DataFrame
+            df = pd.read_csv(file_path)
             
-            logger.info(f"Loaded {len(df)} market orders from snapshot")
+            logger.info(f"Loaded {len(df)} market orders from file")
             return df
         
         except Exception as e:
-            logger.error(f"Error loading snapshot: {e}")
+            logger.error(f"Error loading market orders from file: {e}")
             return None
     
     def _filter_orders_by_region_and_type(self, df: pd.DataFrame, region_ids: List[int], type_ids: List[int]) -> pd.DataFrame:
@@ -224,26 +180,20 @@ class EVERefMarketClient:
         """
         # Check if we need to update the cache
         current_time = datetime.now()
-        if (self.last_update_time is None or 
-            current_time - self.last_update_time > self.cache_duration or
-            not self.market_orders_cache):
+        if (self.market_orders_cache is None or 
+            self.last_update_time is None or 
+            current_time - self.last_update_time > self.cache_duration):
             
-            # Get the latest snapshot URL
-            url = self._get_latest_snapshot_url()
-            if not url:
-                logger.error("Failed to get latest snapshot URL")
-                return []
-            
-            # Download the snapshot
-            file_path = self._download_snapshot(url)
+            # Get the latest processed market orders file
+            file_path = self._get_latest_market_orders_file()
             if not file_path:
-                logger.error("Failed to download snapshot")
+                logger.error("Failed to get latest market orders file")
                 return []
             
-            # Load the snapshot into a DataFrame
-            df = self._load_snapshot_to_dataframe(file_path)
+            # Load the market orders from the file
+            df = self._load_market_orders_from_file(file_path)
             if df is None:
-                logger.error("Failed to load snapshot")
+                logger.error("Failed to load market orders from file")
                 return []
             
             # Update the cache
