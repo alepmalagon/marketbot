@@ -16,7 +16,7 @@ import argparse
 import logging
 import os
 import sys
-from web_server_fixed import run_web_server
+from web_server import run_web_server
 
 # Set up logging
 logging.basicConfig(
