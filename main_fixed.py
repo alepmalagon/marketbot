@@ -6,7 +6,6 @@ This script can run the bot in different modes:
 2. Foreground service mode: Run as a continuous service in the foreground
 3. Background service mode: Run as a daemon process in the background
 4. Windows service mode: Install and run as a Windows service
-5. Web UI mode: Run a web server with a user interface
 """
 import argparse
 import logging
@@ -16,7 +15,7 @@ import platform
 import sys
 from datetime import datetime
 
-from enhanced_market_scanner import EnhancedMarketScanner
+from enhanced_market_scanner_fixed_v2 import EnhancedMarketScanner
 from service_manager import ServiceManager, run_as_daemon, run_in_foreground
 import config
 from esi_client import ESIClient
@@ -207,9 +206,9 @@ def main():
     # Add command line arguments
     parser.add_argument(
         "--mode", 
-        choices=["scan", "foreground", "background", "windows-service", "web-ui"],
+        choices=["scan", "foreground", "background", "windows-service"],
         default="scan",
-        help="Operating mode: single scan, foreground service, background service, Windows service, or Web UI"
+        help="Operating mode: single scan, foreground service, background service, or Windows service"
     )
     
     parser.add_argument(
