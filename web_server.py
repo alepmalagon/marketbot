@@ -19,6 +19,7 @@ import config
 from esi_client import ESIClient
 from solar_system_data import load_solar_systems
 from main import resolve_reference_system, parse_hull_ids
+from ship_hulls import get_all_battleships, get_all_cruisers, get_ship_info
 
 # Set up logging
 logging.basicConfig(
@@ -48,98 +49,15 @@ def serve_static(path):
 @app.route('/api/battleships', methods=['GET'])
 def get_battleships():
     """Get the list of all battleship hulls."""
-    esi_client = ESIClient()
-    battleships = []
-    
-    # Get T1 Battleships
-    for type_id in config.T1_BATTLESHIP_TYPE_IDS:
-        type_info = esi_client.get_type_info(type_id)
-        battleships.append({
-            'id': type_id,
-            'name': type_info.get('name', f'Unknown Type {type_id}'),
-            'category': 'T1 Battleship'
-        })
-    
-    # Get Black Ops Battleships
-    for type_id in config.BLACK_OPS_TYPE_IDS:
-        type_info = esi_client.get_type_info(type_id)
-        battleships.append({
-            'id': type_id,
-            'name': type_info.get('name', f'Unknown Type {type_id}'),
-            'category': 'Black Ops'
-        })
-    
-    # Get Marauder Battleships
-    for type_id in config.MARAUDER_TYPE_IDS:
-        type_info = esi_client.get_type_info(type_id)
-        battleships.append({
-            'id': type_id,
-            'name': type_info.get('name', f'Unknown Type {type_id}'),
-            'category': 'Marauder'
-        })
-    
-    # Get Faction Battleships
-    for type_id in config.FACTION_BATTLESHIP_TYPE_IDS:
-        type_info = esi_client.get_type_info(type_id)
-        battleships.append({
-            'id': type_id,
-            'name': type_info.get('name', f'Unknown Type {type_id}'),
-            'category': 'Faction Battleship'
-        })
-    
-    # Get Pirate Faction Battleships
-    for type_id in config.PIRATE_BATTLESHIP_TYPE_IDS:
-        type_info = esi_client.get_type_info(type_id)
-        battleships.append({
-            'id': type_id,
-            'name': type_info.get('name', f'Unknown Type {type_id}'),
-            'category': 'Pirate Battleship'
-        })
-    
+    # Use the static data instead of making API calls
+    battleships = get_all_battleships()
     return jsonify(battleships)
 
 @app.route('/api/cruisers', methods=['GET'])
 def get_cruisers():
     """Get the list of all cruiser hulls."""
-    esi_client = ESIClient()
-    cruisers = []
-    
-    # Get Command Ships
-    for type_id in config.COMMAND_SHIP_TYPE_IDS:
-        type_info = esi_client.get_type_info(type_id)
-        cruisers.append({
-            'id': type_id,
-            'name': type_info.get('name', f'Unknown Type {type_id}'),
-            'category': 'Command Ship'
-        })
-    
-    # Get Strategic Cruisers
-    for type_id in config.STRATEGIC_CRUISER_TYPE_IDS:
-        type_info = esi_client.get_type_info(type_id)
-        cruisers.append({
-            'id': type_id,
-            'name': type_info.get('name', f'Unknown Type {type_id}'),
-            'category': 'Strategic Cruiser'
-        })
-    
-    # Get Heavy Assault Cruisers
-    for type_id in config.HAC_TYPE_IDS:
-        type_info = esi_client.get_type_info(type_id)
-        cruisers.append({
-            'id': type_id,
-            'name': type_info.get('name', f'Unknown Type {type_id}'),
-            'category': 'Heavy Assault Cruiser'
-        })
-    
-    # Get Recon Ships
-    for type_id in config.RECON_SHIP_TYPE_IDS:
-        type_info = esi_client.get_type_info(type_id)
-        cruisers.append({
-            'id': type_id,
-            'name': type_info.get('name', f'Unknown Type {type_id}'),
-            'category': 'Recon Ship'
-        })
-    
+    # Use the static data instead of making API calls
+    cruisers = get_all_cruisers()
     return jsonify(cruisers)
 
 @app.route('/api/systems', methods=['GET'])
