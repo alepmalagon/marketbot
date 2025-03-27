@@ -1,33 +1,39 @@
 /* EVE Online Market Bot Web UI Styles */
 
 :root {
-    /* Dark Theme (Default) */
-    --primary-color: #1a1a2e;
-    --secondary-color: #16213e;
-    --accent-color: #0f3460;
-    --highlight-color: #e94560;
-    --text-color: #f0f0f0;
-    --border-color: #2a2a4a;
-    --input-bg: #0c0c1d;
+    /* Dark Theme (Default) - EVE Online inspired */
+    --primary-color: #0a0a0f;
+    --secondary-color: #12151a;
+    --accent-color: #1a3353;
+    --highlight-color: #00a8ff;
+    --text-color: #c5d1e1;
+    --border-color: #2a3a4a;
+    --input-bg: #0c1015;
     --success-color: #4caf50;
     --warning-color: #ff9800;
-    --table-hover-bg: rgba(15, 52, 96, 0.3);
-    --shadow-color: rgba(0, 0, 0, 0.2);
+    --table-hover-bg: rgba(26, 51, 83, 0.3);
+    --shadow-color: rgba(0, 0, 0, 0.4);
+    --header-bg: linear-gradient(to bottom, #1a3353, #12151a);
+    --button-bg: linear-gradient(to bottom, #1a3353, #0f2340);
+    --table-header-bg: linear-gradient(to bottom, #1a3353, #0f2340);
 }
 
 /* Light Theme */
 [data-theme="light"] {
-    --primary-color: #f5f5f7;
+    --primary-color: #e8eaef;
     --secondary-color: #ffffff;
-    --accent-color: #007bff;
-    --highlight-color: #e94560;
+    --accent-color: #3a6ea5;
+    --highlight-color: #0078d7;
     --text-color: #333333;
-    --border-color: #dddddd;
-    --input-bg: #ffffff;
+    --border-color: #c0c0c0;
+    --input-bg: #f5f5f5;
     --success-color: #28a745;
     --warning-color: #ffc107;
-    --table-hover-bg: rgba(0, 123, 255, 0.1);
+    --table-hover-bg: rgba(58, 110, 165, 0.1);
     --shadow-color: rgba(0, 0, 0, 0.1);
+    --header-bg: linear-gradient(to bottom, #3a6ea5, #ffffff);
+    --button-bg: linear-gradient(to bottom, #3a6ea5, #2a5e95);
+    --table-header-bg: linear-gradient(to bottom, #3a6ea5, #2a5e95);
 }
 
 * {
@@ -37,11 +43,17 @@
 }
 
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: var(--primary-color);
     color: var(--text-color);
     line-height: 1.6;
     transition: background-color 0.3s ease, color 0.3s ease;
+    background-image: url('https://images.ctfassets.net/7lhcm73ukv5p/5zWGCmkK0sOGeQqUC6eQME/c9c1acf2e8a4d42ebd3e0a427f5727e4/eve_online_2.jpg');
+    background-size: cover;
+    background-attachment: fixed;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-blend-mode: overlay;
 }
 
 .container {
@@ -51,20 +63,44 @@ body {
 }
 
 header {
-    text-align: center;
+    display: flex;
+    align-items: center;
     margin-bottom: 30px;
     padding: 20px;
-    background-color: var(--secondary-color);
+    background: var(--header-bg);
     border-radius: 8px;
-    box-shadow: 0 4px 8px var(--shadow-color);
+    box-shadow: 0 4px 12px var(--shadow-color);
     position: relative;
     transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid var(--border-color);
+}
+
+.logo {
+    font-size: 2.5rem;
+    color: var(--highlight-color);
+    margin-right: 20px;
+    text-shadow: 0 0 10px rgba(0, 168, 255, 0.5);
+}
+
+.eve-logo {
+    width: 50px;
+    height: 50px;
+    filter: drop-shadow(0 0 5px rgba(0, 168, 255, 0.7));
+}
+
+.header-content {
+    flex: 1;
 }
 
 header h1 {
+    font-family: 'Rajdhani', sans-serif;
     font-size: 2.5rem;
-    margin-bottom: 10px;
+    margin-bottom: 5px;
     color: var(--highlight-color);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    text-shadow: 0 0 10px rgba(0, 168, 255, 0.5);
+    font-weight: 700;
 }
 
 header p {
@@ -74,11 +110,9 @@ header p {
 
 /* Theme Toggle Switch */
 .theme-switch-wrapper {
-    position: absolute;
-    top: 20px;
-    right: 20px;
     display: flex;
     align-items: center;
+    margin-left: 20px;
 }
 
 .theme-switch {
@@ -135,8 +169,20 @@ input:checked + .slider:before {
     padding: 25px;
     border-radius: 8px;
     margin-bottom: 30px;
-    box-shadow: 0 4px 8px var(--shadow-color);
+    box-shadow: 0 4px 12px var(--shadow-color);
     transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid var(--border-color);
+    backdrop-filter: blur(5px);
+}
+
+.form-row {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.form-row .form-group {
+    flex: 1;
 }
 
 .form-group {
@@ -148,6 +194,10 @@ input:checked + .slider:before {
     margin-bottom: 8px;
     font-weight: bold;
     font-size: 1.1rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--highlight-color);
+    font-family: 'Rajdhani', sans-serif;
 }
 
 .input-with-icon {
@@ -178,7 +228,7 @@ input[type="text"]:focus,
 input[type="number"]:focus {
     outline: none;
     border-color: var(--highlight-color);
-    box-shadow: 0 0 0 2px rgba(233, 69, 96, 0.2);
+    box-shadow: 0 0 0 2px rgba(0, 168, 255, 0.2);
 }
 
 .hulls-container {
@@ -209,6 +259,7 @@ input[type="number"]:focus {
 
 .hull-checkbox:hover {
     border-color: var(--highlight-color);
+    background-color: rgba(0, 168, 255, 0.1);
 }
 
 .hull-checkbox input {
@@ -219,22 +270,28 @@ input[type="number"]:focus {
     display: block;
     width: 100%;
     padding: 14px;
-    background-color: var(--highlight-color);
+    background: var(--button-bg);
     color: white;
     border: none;
     border-radius: 4px;
     font-size: 1.1rem;
     font-weight: bold;
     cursor: pointer;
-    transition: background-color 0.2s ease;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    font-family: 'Rajdhani', sans-serif;
 }
 
 .scan-button:hover {
-    background-color: #d03d54;
+    background: linear-gradient(to bottom, #2a5e95, #1a3353);
+    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
 }
 
 .scan-button:active {
     transform: translateY(1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .scan-button i {
@@ -246,8 +303,10 @@ input[type="number"]:focus {
     padding: 25px;
     border-radius: 8px;
     margin-bottom: 30px;
-    box-shadow: 0 4px 8px var(--shadow-color);
+    box-shadow: 0 4px 12px var(--shadow-color);
     transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid var(--border-color);
+    backdrop-filter: blur(5px);
 }
 
 .results-header {
@@ -262,6 +321,14 @@ input[type="number"]:focus {
 .results-header h2 {
     color: var(--highlight-color);
     font-size: 1.8rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600;
+}
+
+.results-header h2 i {
+    margin-right: 10px;
 }
 
 .results-info {
@@ -287,10 +354,13 @@ th, td {
 }
 
 th {
-    background-color: var(--accent-color);
+    background: var(--table-header-bg);
     color: var(--text-color);
     font-weight: bold;
     transition: background-color 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-family: 'Rajdhani', sans-serif;
 }
 
 tr:hover {
@@ -322,6 +392,8 @@ footer {
     border-top: 1px solid var(--border-color);
     opacity: 0.7;
     transition: border-color 0.3s ease;
+    background-color: rgba(10, 10, 15, 0.7);
+    border-radius: 8px;
 }
 
 footer a {
@@ -345,16 +417,29 @@ footer a:hover {
         padding: 10px;
     }
     
-    header h1 {
-        font-size: 2rem;
+    header {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .logo {
+        margin-right: 0;
+        margin-bottom: 10px;
+    }
+    
+    .eve-logo {
+        margin-right: 0;
+        margin-bottom: 10px;
     }
     
     .theme-switch-wrapper {
-        position: relative;
-        top: 0;
-        right: 0;
-        justify-content: center;
+        margin-left: 0;
         margin-top: 15px;
+    }
+    
+    .form-row {
+        flex-direction: column;
+        gap: 10px;
     }
     
     .results-header {
