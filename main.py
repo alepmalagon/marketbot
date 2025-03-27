@@ -21,7 +21,6 @@ from service_manager import ServiceManager, run_as_daemon, run_in_foreground
 import config
 from esi_client import ESIClient
 from solar_system_data import load_solar_systems
-from web_server import run_web_server
 
 # Set up logging
 logging.basicConfig(
@@ -263,8 +262,7 @@ def main():
         run_as_daemon(args.system, args.jumps, hull_ids)
     elif args.mode == "windows-service":
         install_windows_service()
-    elif args.mode == "web-ui":
-        run_web_server()
+
 
 if __name__ == "__main__":
     main()
