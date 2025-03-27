@@ -18,6 +18,7 @@ A tool for finding good market deals on ship hulls near any system in EVE Online
 - Customizable jump range and hull types
 - Web interface for easy interaction with the market scanner
 - EVERef API integration for comprehensive ship data
+- Fast market data retrieval using EVERef data snapshots
 
 ## Requirements
 
@@ -31,6 +32,7 @@ A tool for finding good market deals on ship hulls near any system in EVE Online
   - `pywin32` (for Windows service, Windows only)
   - `flask` (for web interface)
   - `flask-cors` (for web API)
+  - `pandas` (for EVERef data processing)
 
 ## Installation
 
@@ -48,6 +50,11 @@ A tool for finding good market deals on ship hulls near any system in EVE Online
 3. (Optional) Copy the example environment file and customize it:
    ```
    cp .env.example .env
+   ```
+
+4. (Optional but recommended) Download EVERef market data for faster performance:
+   ```
+   python everef_market_data_downloader.py
    ```
 
 ## Usage
@@ -146,6 +153,29 @@ The web interface provides a user-friendly way to:
 - View and sort the results in a table
 - Switch between light and dark themes
 
+## EVERef Market Data Downloader
+
+For faster market data retrieval, you can use the EVERef Market Data Downloader to download and process market data snapshots:
+
+```bash
+# Download both market orders and history
+python everef_market_data_downloader.py
+
+# Download only market orders
+python everef_market_data_downloader.py --orders-only
+
+# Download only market history
+python everef_market_data_downloader.py --history-only
+
+# Specify a custom data directory
+python everef_market_data_downloader.py --data-dir /path/to/data
+```
+
+The downloader will:
+1. Download the latest market data snapshots from EVERef
+2. Process and convert them to CSV format for faster loading
+3. Store them in the specified data directory (default: `everef_data`)
+
 ## EVERef Integration
 
 The bot can now use the EVERef API to fetch reference data about ships and other items in EVE Online.
@@ -174,7 +204,7 @@ The `everef_client.py` module provides a client for interacting with the EVERef 
 
 The script will:
 1. Automatically discover all regions within the configured jump range of your reference system using a BFS algorithm
-2. Fetch all sell orders for ship hulls in the discovered regions
+2. Fetch all sell orders for ship hulls in the discovered regions (using EVERef data if available, or ESI API as fallback)
 3. Filter orders by minimum price and maximum distance from your reference system
 4. Compare prices with the lowest Jita prices
 5. Output good deals to the console
@@ -249,6 +279,7 @@ This project uses the following APIs:
 
 - [EVE ESI API](https://esi.evetech.net/docs/esi_introduction.html) - Official EVE Online API for market data
 - [EVERef API](https://docs.everef.net/) - Third-party reference data API for EVE Online
+- [EVERef Market Data](https://data.everef.net/market-orders/) - Market order snapshots for faster data retrieval
 
 ## License
 
