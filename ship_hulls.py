@@ -68,7 +68,7 @@ PIRATE_BATTLESHIPS = {
     33472: "Nestor",        # Sisters of EVE
 }
 
-# Command Ships
+# Command Ships (Command Battlecruisers)
 COMMAND_SHIPS = {
     22448: "Absolution",    # Amarr
     22474: "Damnation",     # Amarr
@@ -121,11 +121,13 @@ SHIP_CATEGORIES = {
     **{id: {"name": name, "category": "Faction Battleship"} for id, name in FACTION_BATTLESHIPS.items()},
     **{id: {"name": name, "category": "Pirate Battleship"} for id, name in PIRATE_BATTLESHIPS.items()},
     
-    # Cruisers
-    **{id: {"name": name, "category": "Command Ship"} for id, name in COMMAND_SHIPS.items()},
+    # Advanced Cruisers
     **{id: {"name": name, "category": "Strategic Cruiser"} for id, name in STRATEGIC_CRUISERS.items()},
     **{id: {"name": name, "category": "Heavy Assault Cruiser"} for id, name in HEAVY_ASSAULT_CRUISERS.items()},
     **{id: {"name": name, "category": "Recon Ship"} for id, name in RECON_SHIPS.items()},
+    
+    # Command Battlecruisers
+    **{id: {"name": name, "category": "Command Ship"} for id, name in COMMAND_SHIPS.items()},
 }
 
 # Helper function to get ship info by ID
@@ -170,19 +172,19 @@ def get_all_battleships():
     
     return battleships
 
-# Helper function to get all cruisers
+# Helper function to get all advanced cruisers
 def get_all_cruisers():
     """
-    Get all cruiser hulls.
+    Get all advanced cruiser hulls.
     
     Returns:
-        A list of dictionaries with cruiser information
+        A list of dictionaries with advanced cruiser information
     """
     cruisers = []
     
     # Add all cruiser types
     for type_id, info in SHIP_CATEGORIES.items():
-        if "Cruiser" in info["category"] or info["category"] == "Command Ship" or info["category"] == "Recon Ship":
+        if "Cruiser" in info["category"] or info["category"] == "Recon Ship":
             cruisers.append({
                 "id": type_id,
                 "name": info["name"],
@@ -190,3 +192,24 @@ def get_all_cruisers():
             })
     
     return cruisers
+
+# Helper function to get all command battlecruisers
+def get_all_command_ships():
+    """
+    Get all command battlecruiser hulls.
+    
+    Returns:
+        A list of dictionaries with command battlecruiser information
+    """
+    command_ships = []
+    
+    # Add all command ship types
+    for type_id, info in SHIP_CATEGORIES.items():
+        if info["category"] == "Command Ship":
+            command_ships.append({
+                "id": type_id,
+                "name": info["name"],
+                "category": info["category"]
+            })
+    
+    return command_ships
