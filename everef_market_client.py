@@ -1,18 +1,12 @@
 """
-EVERef Market Data client for fetching market orders from EVERef's market order snapshots.
-
-This module provides a client for loading and processing market order data from
-locally downloaded EVERef market order snapshots, which can significantly speed up
-market data retrieval compared to using the ESI API directly.
+EVERef Market Data client for fetching market orders from a local SQLite database
+populated by everef_market_data_downloader.py.
 """
 import os
-import csv
+import sqlite3 # Use SQLite instead of pandas/bz2
 import logging
-import bz2
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any, Set
-import pandas as pd
-import io
+from datetime import datetime, timedelta # Keep datetime if needed for other logic, but cache is removed
+from typing import Dict, List, Optional, Any, Set # Keep typing
 
 # Set up logging
 logging.basicConfig(
@@ -21,273 +15,293 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# --- Constants ---
+# Define column names to map tuple results to dictionary keys easily
+# Ensure these match the column names in the SQLite table ('market_orders')
+ORDER_COLUMNS = [
+    'order_id', 'type_id', 'location_id', 'volume_total', 'volume_remain',
+    'min_volume', 'price', 'is_buy_order', 'duration', 'issued', 'range',
+    'system_id', 'region_id'
+]
+
+
 class EVERefMarketClient:
-    """Client for fetching market data from locally downloaded EVERef market order snapshots."""
-    
+    """Client for fetching market data from a local EVERef SQLite database."""
+
     def __init__(self, data_dir="everef_data"):
         """
         Initialize the EVERef Market client.
-        
+
         Args:
-            data_dir: Directory where downloaded market data is stored
+            data_dir: Directory where the market data database is stored.
         """
         self.data_dir = data_dir
         self.market_orders_dir = os.path.join(data_dir, "market_orders")
-        
-        # Cache for market orders by region and type
-        self.market_orders_cache = None
-        self.last_update_time = None
-        self.cache_duration = timedelta(minutes=30)  # Cache duration in minutes
-        
-        # Check if data directories exist
-        if not os.path.exists(self.market_orders_dir):
-            logger.warning(f"Market orders directory not found: {self.market_orders_dir}")
-            logger.warning("Please run everef_market_data_downloader.py to download market data")
-    
-    def _get_latest_market_orders_file(self) -> Optional[str]:
+        self.db_path = os.path.join(self.market_orders_dir, "market_orders.db") # Path to the SQLite DB
+
+        # Remove pandas cache logic
+        # self.market_orders_cache = None
+        # self.last_update_time = None
+        # self.cache_duration = timedelta(minutes=30)
+
+        # Check if the database file exists
+        if not os.path.exists(self.db_path):
+            logger.error(f"Market orders database not found: {self.db_path}")
+            logger.error("Please run everef_market_data_downloader.py to download and process market data into the database.")
+            # Consider raising an exception here or handling it in methods that need the DB
+            # raise FileNotFoundError(f"Database not found at {self.db_path}")
+
+
+    # Removed _get_latest_market_orders_file and _load_market_orders_from_file
+    # Removed _filter_orders_by_region_and_type and _filter_sell_orders (handled by SQL)
+
+    def _convert_db_row_to_esi_format(self, row: tuple) -> Optional[Dict]:
         """
-        Get the path to the latest processed market orders file.
-        
-        Returns:
-            Path to the latest processed market orders file, or None if not found
-        """
-        if not os.path.exists(self.market_orders_dir):
-            logger.error(f"Market orders directory not found: {self.market_orders_dir}")
-            return None
-        
-        # First check for processed CSV files
-        processed_files = [
-            os.path.join(self.market_orders_dir, f)
-            for f in os.listdir(self.market_orders_dir)
-            if f.endswith('_processed.csv')
-        ]
-        
-        if processed_files:
-            # Sort by modification time (newest first)
-            processed_files.sort(key=lambda f: os.path.getmtime(f), reverse=True)
-            return processed_files[0]
-        
-        # If no processed files, check for raw bz2 files
-        raw_files = [
-            os.path.join(self.market_orders_dir, f)
-            for f in os.listdir(self.market_orders_dir)
-            if f.endswith('.csv.bz2')
-        ]
-        
-        if raw_files:
-            # Sort by modification time (newest first)
-            raw_files.sort(key=lambda f: os.path.getmtime(f), reverse=True)
-            logger.warning(f"No processed CSV files found. Using raw bz2 file: {raw_files[0]}")
-            logger.warning("This will be slower. Consider running everef_market_data_downloader.py to process the data.")
-            return raw_files[0]
-        
-        logger.error("No market orders files found")
-        return None
-    
-    def _load_market_orders_from_file(self, file_path: str) -> Optional[pd.DataFrame]:
-        """
-        Load market orders from a file (either processed CSV or raw bz2).
-        
+        Convert a database row (tuple) to the ESI API dictionary format.
+
         Args:
-            file_path: Path to the market orders file
-            
+            row: A tuple representing a row fetched from the 'market_orders' table.
+
         Returns:
-            DataFrame containing the market orders, or None if loading failed
+            A dictionary in ESI API format, or None if conversion fails.
         """
+        if not row or len(row) != len(ORDER_COLUMNS):
+            logger.warning(f"Skipping invalid database row: {row}")
+            return None
         try:
-            logger.info(f"Loading market orders from {file_path}")
-            
-            if file_path.endswith('.csv'):
-                # Read the processed CSV into a pandas DataFrame
-                df = pd.read_csv(file_path)
-            elif file_path.endswith('.csv.bz2'):
-                # Read the bz2 compressed CSV into a pandas DataFrame
-                logger.info("Reading bz2 compressed file (this may take a moment)...")
-                with bz2.open(file_path, 'rt') as f:
-                    df = pd.read_csv(f)
-            else:
-                logger.error(f"Unsupported file format: {file_path}")
-                return None
-            
-            logger.info(f"Loaded {len(df)} market orders from file")
-            return df
-        
-        except Exception as e:
-            logger.error(f"Error loading market orders from file: {e}")
-            return None
-    
-    def _filter_orders_by_region_and_type(self, df: pd.DataFrame, region_ids: List[int], type_ids: List[int]) -> pd.DataFrame:
-        """
-        Filter market orders by region and type.
-        
-        Args:
-            df: DataFrame containing market orders
-            region_ids: List of region IDs to filter by
-            type_ids: List of type IDs to filter by
-            
-        Returns:
-            DataFrame containing filtered market orders
-        """
-        # Filter by region
-        if region_ids:
-            df = df[df['region_id'].isin(region_ids)]
-        
-        # Filter by type
-        if type_ids:
-            df = df[df['type_id'].isin(type_ids)]
-        
-        return df
-    
-    def _filter_sell_orders(self, df: pd.DataFrame) -> pd.DataFrame:
-        """
-        Filter for sell orders only.
-        
-        Args:
-            df: DataFrame containing market orders
-            
-        Returns:
-            DataFrame containing only sell orders
-        """
-        return df[df['is_buy_order'] == False]
-    
-    def _convert_to_esi_format(self, df: pd.DataFrame) -> List[Dict]:
-        """
-        Convert the DataFrame to the ESI API format for compatibility.
-        
-        Args:
-            df: DataFrame containing market orders
-            
-        Returns:
-            List of dictionaries in ESI API format
-        """
-        orders = []
-        
-        for _, row in df.iterrows():
+            order_dict = dict(zip(ORDER_COLUMNS, row))
+
+            # Type conversions to match ESI format
             order = {
-                'order_id': int(row['order_id']),
-                'type_id': int(row['type_id']),
-                'location_id': int(row['location_id']),
-                'volume_total': int(row['volume_total']),
-                'volume_remain': int(row['volume_remain']),
-                'min_volume': int(row['min_volume']),
-                'price': float(row['price']),
-                'is_buy_order': bool(row['is_buy_order']),
-                'duration': int(row['duration']),
-                'issued': row['issued'],
-                'range': row['range'],
-                'system_id': int(row['system_id']),
-                'region_id': int(row['region_id'])
+                'order_id': int(order_dict['order_id']),
+                'type_id': int(order_dict['type_id']),
+                'location_id': int(order_dict['location_id']),
+                'volume_total': int(order_dict['volume_total']),
+                'volume_remain': int(order_dict['volume_remain']),
+                'min_volume': int(order_dict['min_volume']),
+                'price': float(order_dict['price']),
+                 # SQLite stores BOOLEAN as 0 or 1
+                'is_buy_order': bool(order_dict['is_buy_order']),
+                'duration': int(order_dict['duration']),
+                'issued': order_dict['issued'], # Assumes stored as TEXT ISO format
+                'range': order_dict['range'],
+                'system_id': int(order_dict['system_id']),
+                'region_id': int(order_dict['region_id'])
             }
-            orders.append(order)
-        
-        return orders
-    
-    def get_market_orders(self, region_ids: List[int] = None, type_ids: List[int] = None, order_type: str = 'sell') -> List[Dict]:
+            return order
+        except (TypeError, ValueError, KeyError) as e:
+            logger.error(f"Error converting database row to ESI format: {e} - Row: {row}")
+            return None
+
+
+    def get_market_orders(self, region_ids: Optional[List[int]] = None, type_ids: Optional[List[int]] = None, order_type: str = 'sell') -> List[Dict]:
         """
-        Get market orders from the latest snapshot, filtered by region, type, and order type.
-        
+        Get market orders from the SQLite database, filtered by region, type, and order type.
+
         Args:
-            region_ids: List of region IDs to filter by
-            type_ids: List of type IDs to filter by
-            order_type: Order type to filter by ('buy' or 'sell')
-            
+            region_ids: Optional list of region IDs to filter by.
+            type_ids: Optional list of type IDs to filter by.
+            order_type: Order type to filter by ('buy' or 'sell', default 'sell').
+
         Returns:
-            List of market orders in ESI API format
+            List of market orders in ESI API format.
         """
-        # Check if we need to update the cache
-        current_time = datetime.now()
-        if (self.market_orders_cache is None or 
-            self.last_update_time is None or 
-            current_time - self.last_update_time > self.cache_duration):
-            
-            # Get the latest market orders file
-            file_path = self._get_latest_market_orders_file()
-            if not file_path:
-                logger.error("Failed to get latest market orders file")
-                return []
-            
-            # Load the market orders from the file
-            df = self._load_market_orders_from_file(file_path)
-            if df is None:
-                logger.error("Failed to load market orders from file")
-                return []
-            
-            # Update the cache
-            self.market_orders_cache = df
-            self.last_update_time = current_time
-            logger.info(f"Updated market orders cache with {len(df)} orders")
-        
-        # Use the cached DataFrame
-        df = self.market_orders_cache
-        
-        # Filter by region and type
-        df_filtered = self._filter_orders_by_region_and_type(df, region_ids, type_ids)
-        
-        # Filter by order type
-        if order_type == 'sell':
-            df_filtered = self._filter_sell_orders(df_filtered)
-        elif order_type == 'buy':
-            df_filtered = df_filtered[df_filtered['is_buy_order'] == True]
-        
-        # Convert to ESI format
-        orders = self._convert_to_esi_format(df_filtered)
-        
-        logger.info(f"Returning {len(orders)} {order_type} orders for {len(type_ids) if type_ids else 'all'} types in {len(region_ids) if region_ids else 'all'} regions")
-        
+        if not os.path.exists(self.db_path):
+             logger.error(f"Database not found at {self.db_path}. Cannot fetch orders.")
+             return []
+
+        conn = None
+        orders = []
+        try:
+            conn = sqlite3.connect(self.db_path)
+            # Set row_factory for easier column access if needed, but tuple is fine for zip
+            # conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+
+            # Build the SQL query dynamically and safely
+            query = f"SELECT {', '.join(ORDER_COLUMNS)} FROM market_orders WHERE"
+            conditions = []
+            params = []
+
+            # Filter by order type
+            if order_type == 'sell':
+                conditions.append("is_buy_order = ?")
+                params.append(0) # False
+            elif order_type == 'buy':
+                conditions.append("is_buy_order = ?")
+                params.append(1) # True
+            else:
+                 logger.warning(f"Invalid order_type '{order_type}'. Defaulting to 'sell'.")
+                 conditions.append("is_buy_order = ?")
+                 params.append(0) # False
+
+
+            # Filter by region IDs (if provided)
+            if region_ids:
+                if len(region_ids) == 1:
+                    conditions.append("region_id = ?")
+                    params.append(region_ids[0])
+                else:
+                    placeholders = ', '.join('?' * len(region_ids))
+                    conditions.append(f"region_id IN ({placeholders})")
+                    params.extend(region_ids)
+
+            # Filter by type IDs (if provided)
+            if type_ids:
+                if len(type_ids) == 1:
+                    conditions.append("type_id = ?")
+                    params.append(type_ids[0])
+                else:
+                    placeholders = ', '.join('?' * len(type_ids))
+                    conditions.append(f"type_id IN ({placeholders})")
+                    params.extend(type_ids)
+
+            # Combine conditions
+            if conditions:
+                query += " " + " AND ".join(conditions)
+            else:
+                # Handle case with no filters (fetch all) - potentially very large!
+                # Remove the initial "WHERE" if no conditions were added
+                query = query.replace(" WHERE", "")
+                logger.warning("Fetching all market orders without filters. This might be slow and memory-intensive.")
+
+
+            logger.debug(f"Executing SQL query: {query} with params: {params}")
+            cursor.execute(query, params)
+
+            # Fetch and convert results
+            # Use fetchmany or iterate cursor for very large results to save memory
+            logger.info("Fetching results from database...")
+            fetched_count = 0
+            while True:
+                rows = cursor.fetchmany(10000) # Process in chunks
+                if not rows:
+                    break
+                for row in rows:
+                    esi_order = self._convert_db_row_to_esi_format(row)
+                    if esi_order:
+                        orders.append(esi_order)
+                fetched_count += len(rows)
+                # logger.debug(f"Fetched {fetched_count} rows so far...")
+
+
+            logger.info(f"Retrieved {len(orders)} matching market orders from the database.")
+
+        except sqlite3.Error as e:
+            logger.error(f"SQLite error executing query: {e}")
+        finally:
+            if conn:
+                conn.close()
+                # logger.debug("SQLite connection closed.")
+
         return orders
-    
+
     def get_market_orders_for_multiple_types(self, region_ids: List[int], type_ids: List[int], order_type: str = 'sell') -> Dict[int, List[Dict]]:
         """
-        Get market orders for multiple types, organized by type ID.
-        
+        Get market orders for multiple types, organized by type ID, using the database.
+
         Args:
-            region_ids: List of region IDs to filter by
-            type_ids: List of type IDs to get orders for
-            order_type: Order type to filter by ('buy' or 'sell')
-            
+            region_ids: List of region IDs to filter by.
+            type_ids: List of type IDs to get orders for.
+            order_type: Order type to filter by ('buy' or 'sell').
+
         Returns:
-            Dictionary mapping type IDs to lists of market orders
+            Dictionary mapping type IDs to lists of market orders.
         """
-        orders_by_type = {}
-        
-        # Get all orders for the specified regions and types
+        orders_by_type = {type_id: [] for type_id in type_ids} # Initialize dict
+
+        # Get all relevant orders in one query
         all_orders = self.get_market_orders(region_ids, type_ids, order_type)
-        
+
         # Organize orders by type ID
         for order in all_orders:
             type_id = order['type_id']
-            if type_id not in orders_by_type:
-                orders_by_type[type_id] = []
-            orders_by_type[type_id].append(order)
-        
+            # Should already be filtered by type_ids, but check just in case
+            if type_id in orders_by_type:
+                orders_by_type[type_id].append(order)
+            else:
+                 # This case should ideally not happen if get_market_orders filters correctly
+                 logger.warning(f"Order found for unexpected type_id {type_id}. Adding to dict.")
+                 orders_by_type[type_id] = [order]
+
+
+        logger.info(f"Organized orders for {len(orders_by_type)} types.")
         return orders_by_type
-    
+
     def get_lowest_sell_prices_by_system(self, region_ids: List[int], type_ids: List[int]) -> Dict[int, Dict[int, float]]:
         """
-        Get the lowest sell prices for each type in each system.
-        
+        Get the lowest sell prices for each type in each system using an efficient SQL query.
+
         Args:
-            region_ids: List of region IDs to filter by
-            type_ids: List of type IDs to get prices for
-            
+            region_ids: List of region IDs to filter by.
+            type_ids: List of type IDs to get prices for.
+
         Returns:
-            Dictionary mapping type IDs to dictionaries mapping system IDs to lowest prices
+            Dictionary mapping type IDs to dictionaries mapping system IDs to lowest prices.
+            Example: {type_id: {system_id: lowest_price, ...}, ...}
         """
-        # Get all sell orders for the specified regions and types
-        all_orders = self.get_market_orders(region_ids, type_ids, 'sell')
-        
-        # Organize orders by type and system
-        lowest_prices = {}
-        
-        for order in all_orders:
-            type_id = order['type_id']
-            system_id = order['system_id']
-            price = order['price']
-            
-            if type_id not in lowest_prices:
-                lowest_prices[type_id] = {}
-            
-            if system_id not in lowest_prices[type_id] or price < lowest_prices[type_id][system_id]:
-                lowest_prices[type_id][system_id] = price
-        
+        if not os.path.exists(self.db_path):
+             logger.error(f"Database not found at {self.db_path}. Cannot fetch prices.")
+             return {}
+
+        conn = None
+        lowest_prices = {type_id: {} for type_id in type_ids} # Initialize dict
+
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+
+            # Build the SQL query using GROUP BY and MIN()
+            query = """
+                SELECT type_id, system_id, MIN(price) as min_price
+                FROM market_orders
+                WHERE is_buy_order = 0 -- Sell orders only
+            """
+            params = []
+
+            # Add region ID filtering
+            if region_ids:
+                if len(region_ids) == 1:
+                    query += " AND region_id = ?"
+                    params.append(region_ids[0])
+                else:
+                    placeholders = ', '.join('?' * len(region_ids))
+                    query += f" AND region_id IN ({placeholders})"
+                    params.extend(region_ids)
+
+            # Add type ID filtering
+            if type_ids:
+                if len(type_ids) == 1:
+                    query += " AND type_id = ?"
+                    params.append(type_ids[0])
+                else:
+                    placeholders = ', '.join('?' * len(type_ids))
+                    query += f" AND type_id IN ({placeholders})"
+                    params.extend(type_ids)
+
+            query += " GROUP BY type_id, system_id" # Group to find the minimum per type/system
+
+            logger.debug(f"Executing SQL query for lowest prices: {query} with params: {params}")
+            cursor.execute(query, params)
+
+            # Fetch results and populate the dictionary
+            for row in cursor.fetchall():
+                type_id, system_id, min_price = row
+                if type_id in lowest_prices: # Ensure type_id is one we asked for
+                    lowest_prices[type_id][system_id] = float(min_price) # Store price
+                else:
+                    # Should not happen if type_id filter is correct, but handle defensively
+                     logger.warning(f"Found lowest price for unexpected type_id {type_id}. Adding to dict.")
+                     lowest_prices[type_id] = {system_id: float(min_price)}
+
+
+            logger.info(f"Retrieved lowest sell prices for {len(lowest_prices)} types across systems.")
+
+        except sqlite3.Error as e:
+            logger.error(f"SQLite error getting lowest prices: {e}")
+        finally:
+            if conn:
+                conn.close()
+                # logger.debug("SQLite connection closed.")
+
         return lowest_prices

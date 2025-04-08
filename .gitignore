@@ -41,3 +41,4 @@ deals_*.json
 *.log
 everef_data/market_orders/market-orders-latest.v3.csv.bz2
 everef_data/market_orders/market-orders-latest.v3_processed.csv
+everef_data/market_orders/market_orders.db
