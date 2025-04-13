@@ -1,0 +1,14 @@
+fastapi
+uvicorn[standard] # Includes websockets and http protocol handling
+pydantic
+aiosqlite         # Async SQLite driver
+requests          # For data download script
+httpx             # Alternative async HTTP client (good for async download)
+
+# For load_data script if using pandas/parquet:
+pandas
+pyarrow           # Parquet engine for Pandas
+# or fastparquet
+
+# Potentially SQLAlchemy if you prefer it over raw SQL
+# sqlalchemy[asyncio]
