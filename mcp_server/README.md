@@ -129,18 +129,22 @@ The containerized API will be available at http://localhost:8000.
 
 ## API Endpoints
 
-GET /.well-known/model-context: MCP discovery endpoint. Returns a list of available data schemas and their corresponding API endpoint URLs.
-GET /api/v1/types/{type_id}: Retrieves details for a specific EVE Online item type.
-Path Parameter: type_id (integer)
-GET /api/v1/market/orders: Searches for market orders.
+- GET /.well-known/model-context: MCP discovery endpoint. Returns a list of available data schemas and their corresponding API endpoint URLs.
+
+- GET /api/v1/types/{type_id}: Retrieves details for a specific EVE Online item type.
+ - Path Parameter: type_id (integer)
+
+- GET /api/v1/market/orders: Searches for market orders.
 Query Parameters:
-type_id (integer, required): The item type ID to search for.
-region_id (integer, optional): Filter orders by region ID.
-system_id (integer, optional): Filter orders by solar system ID. (Note: Either region_id or system_id should be provided).
-order_type (string, optional): Filter by 'buy' or 'sell'.
+ - type_id (integer, required): The item type ID to search for.
+ - region_id (integer, optional): Filter orders by region ID.
+system_id (integer, optional): Filter orders by solar system  - ID. (Note: Either region_id or system_id should be provided).
+ - order_type (string, optional): Filter by 'buy' or 'sell'.
 limit (integer, optional, default: 100): Maximum number of orders to return.
-GET /docs: Interactive Swagger UI documentation.
-GET /redoc: Alternative ReDoc documentation.
+
+- GET /docs: Interactive Swagger UI documentation.
+
+- GET /redoc: Alternative ReDoc documentation.
 
 ## Configuration
 
